@@ -1,2 +1,2 @@
-# camas
+# CaMaS
 Simple Git based CMS

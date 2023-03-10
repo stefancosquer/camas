@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Build
-        run: yarn build
+        run: yarn build --base=/camas
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact

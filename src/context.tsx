@@ -10,6 +10,7 @@ export type Site = {
   name: string;
   url: string;
   backend: "azure" | "github" | "bitbucket";
+  user: string;
   token: string;
   org: string;
   repository: string;

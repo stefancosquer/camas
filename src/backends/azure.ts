@@ -3,6 +3,8 @@ import { Site } from "../context";
 
 export const useAzure = (site: Site): Backend => {
   return {
+    needOrg: true,
+    needUser: false,
     listProjects: async () =>
       (
         await (
@@ -52,15 +54,12 @@ export const useAzure = (site: Site): Backend => {
       ).value
         ?.sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name.replace("refs/heads/", "")) ?? [],
-
     listFiles: async () => {
-      const branchName = "master";
-
       const items =
         (
           await (
             await fetch(
-              `https://dev.azure.com/${site.org}/${site.project}/_apis/git/repositories/${site.repository}/items?recursionLevel=full&version=${branchName}&api-version=6.0`,
+              `https://dev.azure.com/${site.org}/${site.project}/_apis/git/repositories/${site.repository}/items?recursionLevel=full&version=${site.branch}&api-version=6.0`,
               {
                 headers: {
                   Authorization: `Basic ${btoa(`:${site.token}`)}`,

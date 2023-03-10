@@ -27,6 +27,7 @@ const DEFAULT: Site = {
   name: "",
   url: "",
   backend: "azure",
+  user: "",
   token: "",
   org: "",
   project: "",
@@ -42,7 +43,8 @@ export const Home = () => {
   const [repositories, setRepositories] = useState([]);
   const [branches, setBranches] = useState([]);
   const { sites, addSite, removeSite } = useAppContext();
-  const { listProjects, listRepositories, listBranches } = useBackend(site);
+  const { listProjects, listRepositories, listBranches, needOrg, needUser } =
+    useBackend(site);
   const back = () => {
     if (step === 1) {
       setSite({
@@ -50,6 +52,7 @@ export const Home = () => {
         backend: DEFAULT.backend,
         token: DEFAULT.repository,
         org: DEFAULT.branch,
+        user: DEFAULT.user,
       });
       setStep(0);
     }
@@ -69,7 +72,11 @@ export const Home = () => {
         setStep(1);
       }
     } else if (step === 1) {
-      if (site.org !== "" && site.token != "") {
+      if (
+        (!needOrg || site.org !== "") &&
+        (!needUser || site.user !== "") &&
+        site.token != ""
+      ) {
         try {
           setProjects(await listProjects());
           setStep(2);
@@ -152,6 +159,7 @@ export const Home = () => {
                   onChange={(event) =>
                     setSite({ ...site, name: event.target.value })
                   }
+                  required
                 />
                 <TextField
                   size="small"
@@ -162,6 +170,7 @@ export const Home = () => {
                   onChange={(event) =>
                     setSite({ ...site, url: event.target.value })
                   }
+                  required
                 />
               </>
             )}
@@ -179,25 +188,40 @@ export const Home = () => {
                       backend: event.target.value as Site["backend"],
                     })
                   }
+                  required
                 >
                   <MenuItem value="azure">Azure DevOps</MenuItem>
+                  <MenuItem value="bitbucket">Bitbucket</MenuItem>
                   <MenuItem value="github" disabled>
                     GitHub
                   </MenuItem>
-                  <MenuItem value="bitbucket" disabled>
-                    Bitbucket
-                  </MenuItem>
                 </TextField>
-                <TextField
-                  size="small"
-                  label="Organization"
-                  variant="outlined"
-                  fullWidth
-                  value={site.org}
-                  onChange={(event) =>
-                    setSite({ ...site, org: event.target.value })
-                  }
-                />
+                {needOrg && (
+                  <TextField
+                    size="small"
+                    label="Organization"
+                    variant="outlined"
+                    fullWidth
+                    value={site.org}
+                    onChange={(event) =>
+                      setSite({ ...site, org: event.target.value })
+                    }
+                    required
+                  />
+                )}
+                {needUser && (
+                  <TextField
+                    size="small"
+                    label="Username"
+                    variant="outlined"
+                    fullWidth
+                    value={site.user}
+                    onChange={(event) =>
+                      setSite({ ...site, user: event.target.value })
+                    }
+                    required
+                  />
+                )}
                 <TextField
                   size="small"
                   label="Personal Access Token"
@@ -207,6 +231,7 @@ export const Home = () => {
                   onChange={(event) =>
                     setSite({ ...site, token: event.target.value })
                   }
+                  required
                 />
               </>
             )}

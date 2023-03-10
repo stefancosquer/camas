@@ -119,6 +119,7 @@ export const Home = () => {
             onClick={() => {
               setEditing(!editing);
               setSite(DEFAULT);
+              setStep(0);
             }}
             size="small"
             variant="outlined"

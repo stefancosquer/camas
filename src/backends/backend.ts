@@ -1,6 +1,7 @@
 import { useAzure } from "./azure";
 import { Site, useAppContext } from "../context";
 import { useBitbucket } from "./bitbucket";
+import { useGithub } from "./github";
 
 export type Backend = {
   needOrg: boolean;
@@ -31,6 +32,8 @@ export const useBackend = (site?: Site): Backend => {
       return useAzure(current);
     case "bitbucket":
       return useBitbucket(current);
+    case "github":
+      return useGithub(current);
     default:
       return useDummy();
   }

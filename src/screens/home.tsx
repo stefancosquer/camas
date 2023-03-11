@@ -192,8 +192,9 @@ export const Home = () => {
                 >
                   <MenuItem value="azure">Azure DevOps</MenuItem>
                   <MenuItem value="bitbucket">Bitbucket</MenuItem>
-                  <MenuItem value="github" disabled>
-                    GitHub
+                  <MenuItem value="github">GitHub</MenuItem>
+                  <MenuItem value="gitlab" disabled>
+                    Gitlab
                   </MenuItem>
                 </TextField>
                 {needOrg && (
@@ -314,46 +315,48 @@ export const Home = () => {
         )}
         {!editing && sites.length > 0 && (
           <List>
-            {sites.map(({ name, url }, index) => (
-              <ListItem divider key={index}>
-                <ListItemText
-                  primary={
-                    <Typography
-                      sx={{
-                        cursor: "pointer",
-                        textDecoration: "none",
-                        ":hover": { textDecoration: "underline" },
-                      }}
-                    >
-                      {name}
-                    </Typography>
-                  }
-                  secondary={
-                    <Link
-                      sx={{
-                        textDecoration: "none",
-                        ":hover": { textDecoration: "underline" },
-                      }}
-                      href={`https://${url}`}
-                      target="_blank"
-                    >
-                      {url}
-                    </Link>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={() =>
-                      confirm("Delete this site ?") && removeSite(index)
+            {sites
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(({ name, url }, index) => (
+                <ListItem divider key={index}>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        sx={{
+                          cursor: "pointer",
+                          textDecoration: "none",
+                          ":hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        {name}
+                      </Typography>
                     }
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
+                    secondary={
+                      <Link
+                        sx={{
+                          textDecoration: "none",
+                          ":hover": { textDecoration: "underline" },
+                        }}
+                        href={`https://${url}`}
+                        target="_blank"
+                      >
+                        {url}
+                      </Link>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      aria-label="delete"
+                      onClick={() =>
+                        confirm("Delete this site ?") && removeSite(index)
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
           </List>
         )}
       </Grid>

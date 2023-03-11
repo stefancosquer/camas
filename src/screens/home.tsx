@@ -21,7 +21,7 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { useBackend } from "../backends/backend";
 import { Site, useAppContext } from "../context";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 
 const DEFAULT: Site = {
   name: "",
@@ -321,15 +321,17 @@ export const Home = () => {
                 <ListItem divider key={index}>
                   <ListItemText
                     primary={
-                      <Typography
+                      <Link
                         sx={{
+                          color: "text.primary",
                           cursor: "pointer",
                           textDecoration: "none",
                           ":hover": { textDecoration: "underline" },
                         }}
+                        href="./app"
                       >
                         {name}
-                      </Typography>
+                      </Link>
                     }
                     secondary={
                       <Link
@@ -352,7 +354,7 @@ export const Home = () => {
                         confirm("Delete this site ?") && removeSite(index)
                       }
                     >
-                      <DeleteIcon />
+                      <DeleteOutlineOutlined />
                     </IconButton>
                   </ListItemSecondaryAction>
                 </ListItem>

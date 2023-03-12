@@ -5,6 +5,8 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useParams } from "react-router-dom";
+import { slugify } from "../utils";
 
 export type Site = {
   name: string;
@@ -18,7 +20,7 @@ export type Site = {
   branch: string;
 };
 
-const AppContext = createContext<{
+const SiteContext = createContext<{
   site?: Site;
   sites: Site[];
   addSite: (site: Site) => void;
@@ -31,22 +33,27 @@ const AppContext = createContext<{
   setSite: () => void 0,
 });
 
-export const AppContextProvider = ({ children }: PropsWithChildren) => {
+export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   const [site, setSite] = useState<Site>();
+  const { slug } = useParams();
   const [sites, setSites] = useState<Site[]>(() => {
     const value = localStorage.getItem("sites");
     return value ? JSON.parse(value) : [];
   });
+  useEffect(() => {
+    if (!slug) setSite(undefined);
+    else setSite(sites.find(({ name }) => slug === slugify(name)));
+  }, [slug]);
   useEffect(() => {
     localStorage.setItem("sites", JSON.stringify(sites));
   }, [sites]);
   const addSite = (site) => setSites([...sites, site]);
   const removeSite = (index) => setSites(sites.filter((_, i) => i !== index));
   return (
-    <AppContext.Provider value={{ site, sites, setSite, addSite, removeSite }}>
+    <SiteContext.Provider value={{ site, sites, setSite, addSite, removeSite }}>
       {children}
-    </AppContext.Provider>
+    </SiteContext.Provider>
   );
 };
 
-export const useAppContext = () => useContext(AppContext);
+export const useSite = () => useContext(SiteContext);

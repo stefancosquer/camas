@@ -1,5 +1,5 @@
 import { Backend } from "./backend";
-import { Site } from "../context";
+import { Site } from "../hooks/site";
 
 export const useAzure = (site: Site): Backend => {
   return {

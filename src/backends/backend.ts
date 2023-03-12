@@ -1,5 +1,5 @@
 import { useAzure } from "./azure";
-import { Site, useAppContext } from "../context";
+import { Site, useSite } from "../hooks/site";
 import { useBitbucket } from "./bitbucket";
 import { useGithub } from "./github";
 
@@ -26,7 +26,7 @@ const useDummy = (): Backend => {
 };
 
 export const useBackend = (site?: Site): Backend => {
-  const current = site ?? useAppContext().site;
+  const current = site ?? useSite().site;
   switch (site?.backend) {
     case "azure":
       return useAzure(current);

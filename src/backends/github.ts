@@ -1,5 +1,5 @@
 import { Backend } from "./backend";
-import { Site } from "../context";
+import { Site } from "../hooks/site";
 import { request } from "../utils";
 
 export const useGithub = (site: Site): Backend => {

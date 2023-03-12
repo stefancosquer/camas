@@ -20,8 +20,9 @@ import {
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useBackend } from "../backends/backend";
-import { Site, useAppContext } from "../context";
+import { Site, useSite } from "../hooks/site";
 import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
+import { slugify } from "../utils";
 
 const DEFAULT: Site = {
   name: "",
@@ -42,7 +43,7 @@ export const Home = () => {
   const [projects, setProjects] = useState([]);
   const [repositories, setRepositories] = useState([]);
   const [branches, setBranches] = useState([]);
-  const { sites, addSite, removeSite } = useAppContext();
+  const { sites, addSite, removeSite } = useSite();
   const { listProjects, listRepositories, listBranches, needOrg, needUser } =
     useBackend(site);
   const back = () => {
@@ -328,7 +329,7 @@ export const Home = () => {
                           textDecoration: "none",
                           ":hover": { textDecoration: "underline" },
                         }}
-                        href="./app"
+                        href={slugify(name)}
                       >
                         {name}
                       </Link>

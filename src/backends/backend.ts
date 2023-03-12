@@ -1,7 +1,7 @@
 import { useAzure } from "./azure";
-import { Site, useSite } from "../hooks/site";
 import { useBitbucket } from "./bitbucket";
 import { useGithub } from "./github";
+import { Settings, Site } from "../model";
 
 export type Backend = {
   needOrg: boolean;
@@ -11,7 +11,7 @@ export type Backend = {
     { id: string; name: string; branch: string }[]
   >;
   listBranches: () => Promise<string[]>;
-  listFiles: () => Promise<void>;
+  listFiles: () => Promise<Settings>;
 };
 
 const useDummy = (): Backend => {
@@ -25,8 +25,8 @@ const useDummy = (): Backend => {
   };
 };
 
-export const useBackend = (site?: Site): Backend => {
-  const current = site ?? useSite().site;
+export const useBackend = (site: Site): Backend => {
+  const current = site;
   switch (site?.backend) {
     case "azure":
       return useAzure(current);

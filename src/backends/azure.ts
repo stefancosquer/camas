@@ -1,5 +1,6 @@
 import { Backend } from "./backend";
-import { Site } from "../hooks/site";
+import { load } from "js-yaml";
+import { Settings, Site } from "../model";
 
 export const useAzure = (site: Site): Backend => {
   return {
@@ -97,6 +98,7 @@ export const useAzure = (site: Site): Backend => {
         })
       ).text();
       console.log("settings", content);
+      return load(content) as Settings;
     },
   };
 };

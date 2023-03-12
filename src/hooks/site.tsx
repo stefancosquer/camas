@@ -7,18 +7,7 @@ import {
 } from "react";
 import { useParams } from "react-router-dom";
 import { slugify } from "../utils";
-
-export type Site = {
-  name: string;
-  url: string;
-  backend: "azure" | "github" | "bitbucket";
-  user: string;
-  token: string;
-  org: string;
-  repository: string;
-  project: string;
-  branch: string;
-};
+import { Site } from "../model";
 
 const SiteContext = createContext<{
   site?: Site;

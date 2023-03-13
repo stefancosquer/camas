@@ -3,6 +3,7 @@ import {
   Box,
   Divider,
   Drawer,
+  Link,
   List,
   ListItem,
   ListItemAvatar,
@@ -21,17 +22,23 @@ import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
-import { Outlet } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 
 const DrawerItem = ({
   label,
+  href,
   Icon,
 }: {
   label: string;
+  href: string;
   Icon: typeof SvgIcon;
 }) => (
   <ListItem sx={{ py: 0, px: 1 }}>
-    <ListItemButton sx={{ py: 0, px: 1, borderRadius: 2 }}>
+    <ListItemButton
+      component={Link}
+      href={href}
+      sx={{ py: 0, px: 1, borderRadius: 2 }}
+    >
       <ListItemIcon sx={{ minWidth: "32px" }}>
         <Icon fontSize="small" />
       </ListItemIcon>
@@ -45,6 +52,7 @@ const DrawerItem = ({
 
 export const App = () => {
   const { site } = useSite();
+  const { slug } = useParams();
   const [settings, setSettings] = useState<Settings>();
   const { listFiles } = useBackend(site);
   useEffect(() => {
@@ -70,7 +78,7 @@ export const App = () => {
         </List>
         <Divider />
         <List sx={{ overflow: "auto", flexGrow: 1 }}>
-          {settings?.sections?.map(({ type, label, ...item }, index) =>
+          {settings?.sections?.map(({ type, label, path, ...item }, index) =>
             type === "heading" ? (
               <ListSubheader sx={{ pt: 1 }} key={index} disableSticky>
                 {label}
@@ -79,6 +87,9 @@ export const App = () => {
               <DrawerItem
                 key={index}
                 label={label}
+                href={`/${slug}/${
+                  type === "directory" ? "dir" : "doc"
+                }/${path}`}
                 Icon={
                   type === "directory"
                     ? FolderOpenOutlinedIcon
@@ -90,9 +101,21 @@ export const App = () => {
         </List>
         <Divider />
         <List>
-          <DrawerItem label="Media" Icon={ImageOutlinedIcon} />
-          <DrawerItem label="Types" Icon={DashboardCustomizeOutlinedIcon} />
-          <DrawerItem label="Settings" Icon={SettingsOutlinedIcon} />
+          <DrawerItem
+            label="Media"
+            Icon={ImageOutlinedIcon}
+            href={`/${slug}/media`}
+          />
+          <DrawerItem
+            label="Types"
+            Icon={DashboardCustomizeOutlinedIcon}
+            href={`/${slug}/types`}
+          />
+          <DrawerItem
+            label="Settings"
+            Icon={SettingsOutlinedIcon}
+            href={`/${slug}/settings`}
+          />
         </List>
       </Drawer>
       <Box

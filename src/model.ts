@@ -22,6 +22,7 @@ export type Settings = {
     | {
         type: "heading";
         label: string;
+        path: undefined;
       }
     | {
         type: "document";

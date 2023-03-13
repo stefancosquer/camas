@@ -47,6 +47,7 @@ export const useBitbucket = (site: Site): Backend => {
         .filter(({ type }) => type === "branch")
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name),
+    listFiles: async () => [],
     loadSettings: async () => void 0,
     loadFile: async () => void 0,
   };

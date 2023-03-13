@@ -10,7 +10,7 @@ export const useAzure = (site: Site): Backend => {
       (
         await (
           await fetch(
-            `https://dev.azure.com/${site.org}/${site.project}/_apis/git/repositories/${site.repository}/items?recursionLevel=full&version=${site.branch}&api-version=6.0`,
+            `https://dev.azure.com/${site.org}/${site.project}/_apis/git/repositories/${site.repository}/items?recursionLevel=full&version=${site.branch}&latestProcessedChange=true&api-version=6.0`,
             {
               headers: {
                 Authorization: `Basic ${btoa(`:${site.token}`)}`,
@@ -117,6 +117,20 @@ export const useAzure = (site: Site): Backend => {
       ).value
         ?.sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name.replace("refs/heads/", "")) ?? [],
+    listFiles: async (path: string) => {
+      await syncTree();
+      const files = path
+        .split("/")
+        .reduce((a, v) => (a ? a[v] : undefined), tree);
+      return Object.values(files ?? {}).map(
+        ({
+          path,
+          latestProcessedChange: {
+            author: { name: author, date },
+          },
+        }) => ({ path, author, date })
+      );
+    },
     loadSettings: async () => loadFile(".forestry/settings.yml"),
     loadFile: (path: string) => loadFile(path),
   };

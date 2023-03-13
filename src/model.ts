@@ -10,6 +10,8 @@ export type Site = {
   branch: string;
 };
 
+export type File = { path: string; author: string; date: string };
+
 export type Settings = {
   admin_path: string;
   upload_dir: string;

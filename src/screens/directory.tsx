@@ -1,14 +1,41 @@
-import { Box, Typography } from "@mui/material";
+import {
+  Box,
+  Link,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
+import { useParams } from "react-router-dom";
+import { useSite } from "../hooks/site";
+import { useBackend } from "../backends/backend";
+import { useEffect, useState } from "react";
+import { File } from "../model";
 
-export const Directory = () => (
-  <Box
-    sx={{
-      display: "flex",
-      height: "100vh",
-      justifyContent: "center",
-      alignItems: "center",
-    }}
-  >
-    <Typography variant="h4">Directory !</Typography>
-  </Box>
-);
+export const Directory = () => {
+  const { slug, "*": path } = useParams();
+  const { site } = useSite();
+  const { listFiles } = useBackend(site);
+  const [files, setFiles] = useState<File[]>([]);
+  useEffect(() => {
+    listFiles(path).then(setFiles);
+  }, [path]);
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+      }}
+    >
+      <List sx={{ width: "100%" }}>
+        {files.map(({ path, author, date }, index) => (
+          <ListItem key={index} divider disablePadding>
+            <ListItemButton component={Link} href={`/${slug}/doc${path}`}>
+              <ListItemText primary={path} secondary={`${author}-${date}`} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+};

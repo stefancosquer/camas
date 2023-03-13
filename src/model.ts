@@ -17,6 +17,7 @@ export type Settings = {
   auto_deploy: boolean;
   public_path: "/media";
   webhook_url: null;
+  version: string;
   sections: (
     | {
         type: "heading";

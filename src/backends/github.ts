@@ -1,6 +1,6 @@
 import { Backend } from "./backend";
-import { Site } from "../hooks/site";
 import { request } from "../utils";
+import { Site } from "../model";
 
 export const useGithub = (site: Site): Backend => {
   return {
@@ -47,6 +47,7 @@ export const useGithub = (site: Site): Backend => {
       )
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name),
-    listFiles: async () => {},
+    loadSettings: async () => void 0,
+    loadFile: async () => void 0,
   };
 };

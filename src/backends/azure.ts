@@ -1,8 +1,70 @@
 import { Backend } from "./backend";
 import { load } from "js-yaml";
-import { Settings, Site } from "../model";
+import { Site } from "../model";
 
 export const useAzure = (site: Site): Backend => {
+  let tree = null;
+  const syncTree = async () => {
+    if (tree) return;
+    const items =
+      (
+        await (
+          await fetch(
+            `https://dev.azure.com/${site.org}/${site.project}/_apis/git/repositories/${site.repository}/items?recursionLevel=full&version=${site.branch}&api-version=6.0`,
+            {
+              headers: {
+                Authorization: `Basic ${btoa(`:${site.token}`)}`,
+              },
+            }
+          )
+        ).json()
+      ).value ?? [];
+
+    tree = {};
+
+    for (const item of items) {
+      if (!item.isFolder) {
+        const parts = item.path.split("/");
+        let current = tree;
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+          if (!current[part]) {
+            if (i === parts.length - 1) {
+              current[part] = item;
+            } else {
+              current[part] = {};
+            }
+          }
+          current = current[part];
+        }
+      }
+    }
+  };
+  const loadFile = async <T extends string | object>(
+    path: string
+  ): Promise<T> => {
+    await syncTree();
+    const url = path
+      .split("/")
+      .reduce((a, v) => (a ? a[v] : undefined), tree)?.url;
+    if (url) {
+      const content = await (
+        await fetch(url, {
+          headers: {
+            Authorization: `Basic ${btoa(`:${site.token}`)}`,
+          },
+        })
+      ).text();
+      if (path.endsWith(".json")) {
+        return JSON.parse(content);
+      } else if (path.endsWith(".yml") || path.endsWith(".yaml")) {
+        return load(content) as T;
+      } else {
+        return content as T;
+      }
+    }
+    return null;
+  };
   return {
     needOrg: true,
     needUser: false,
@@ -55,50 +117,7 @@ export const useAzure = (site: Site): Backend => {
       ).value
         ?.sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name.replace("refs/heads/", "")) ?? [],
-    listFiles: async () => {
-      const items =
-        (
-          await (
-            await fetch(
-              `https://dev.azure.com/${site.org}/${site.project}/_apis/git/repositories/${site.repository}/items?recursionLevel=full&version=${site.branch}&api-version=6.0`,
-              {
-                headers: {
-                  Authorization: `Basic ${btoa(`:${site.token}`)}`,
-                },
-              }
-            )
-          ).json()
-        ).value ?? [];
-
-      const tree = {};
-
-      for (const item of items) {
-        if (!item.isFolder) {
-          const parts = item.path.split("/");
-          let current = tree;
-          for (let i = 1; i < parts.length; i++) {
-            const part = parts[i];
-            if (!current[part]) {
-              if (i === parts.length - 1) {
-                current[part] = item;
-              } else {
-                current[part] = {};
-              }
-            }
-            current = current[part];
-          }
-        }
-      }
-      console.log(tree);
-      const content = await (
-        await fetch(tree[".forestry"]["settings.yml"].url, {
-          headers: {
-            Authorization: `Basic ${btoa(`:${site.token}`)}`,
-          },
-        })
-      ).text();
-      console.log("settings", content);
-      return load(content) as Settings;
-    },
+    loadSettings: async () => loadFile(".forestry/settings.yml"),
+    loadFile: (path: string) => loadFile(path),
   };
 };

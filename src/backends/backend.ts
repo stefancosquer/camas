@@ -11,7 +11,8 @@ export type Backend = {
     { id: string; name: string; branch: string }[]
   >;
   listBranches: () => Promise<string[]>;
-  listFiles: () => Promise<Settings>;
+  loadSettings: () => Promise<Settings>;
+  loadFile: (path: string) => Promise<string>;
 };
 
 const useDummy = (): Backend => {
@@ -21,7 +22,8 @@ const useDummy = (): Backend => {
     listProjects: async () => [],
     listRepositories: async () => [],
     listBranches: async () => [],
-    listFiles: async () => void 0,
+    loadSettings: async () => void 0,
+    loadFile: async () => void 0,
   };
 };
 

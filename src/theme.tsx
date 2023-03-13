@@ -11,7 +11,7 @@ const LinkBehavior = forwardRef<
   return <Link ref={ref} to={href} {...other} />;
 });
 
-export const theme = createTheme({
+const base = {
   components: {
     MuiLink: {
       defaultProps: {
@@ -24,4 +24,16 @@ export const theme = createTheme({
       },
     },
   },
-});
+};
+
+export const theme = createTheme(base);
+export const darkTheme = createTheme(
+  {
+    palette: {
+      mode: "dark",
+      background: { paper: "#0d1117" },
+      text: { primary: "#c9d1d9" },
+    },
+  },
+  base
+);

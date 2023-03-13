@@ -21,6 +21,7 @@ import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
+import { Outlet } from "react-router-dom";
 
 const DrawerItem = ({
   label,
@@ -103,7 +104,7 @@ export const App = () => {
           overflow: "auto",
         }}
       >
-        Hello
+        <Outlet />
       </Box>
     </Box>
   );

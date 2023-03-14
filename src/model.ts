@@ -15,6 +15,7 @@ export type File = { path: string; author: string; date: string };
 export type Settings = {
   admin_path: string;
   upload_dir: string;
+  file_template: string;
   new_page_extension: "md|html";
   auto_deploy: boolean;
   public_path: "/media";

@@ -1,9 +1,11 @@
 import { Backend } from "./backend";
 import { load } from "js-yaml";
 import { Site } from "../model";
+import { isImage, isYaml } from "../utils";
+
+let tree = null;
 
 export const useAzure = (site: Site): Backend => {
-  let tree = null;
   const syncTree = async () => {
     if (tree) return;
     const items =
@@ -45,22 +47,30 @@ export const useAzure = (site: Site): Backend => {
   ): Promise<T> => {
     await syncTree();
     const url = path
+      .replace(/^\/|\/$/g, "")
       .split("/")
       .reduce((a, v) => (a ? a[v] : undefined), tree)?.url;
     if (url) {
-      const content = await (
-        await fetch(url, {
-          headers: {
-            Authorization: `Basic ${btoa(`:${site.token}`)}`,
-          },
-        })
-      ).text();
+      const content = await fetch(url, {
+        headers: {
+          Authorization: `Basic ${btoa(`:${site.token}`)}`,
+        },
+      });
       if (path.endsWith(".json")) {
-        return JSON.parse(content);
-      } else if (path.endsWith(".yml") || path.endsWith(".yaml")) {
-        return load(content) as T;
+        return JSON.parse(await content.text());
+      } else if (isYaml(path)) {
+        return load(await content.text()) as T;
+      } else if (isImage(path)) {
+        return await new Promise(async (resolve) => {
+          const reader = new FileReader();
+          reader.addEventListener("load", () => {
+            // TODO add resize
+            resolve(reader.result as T);
+          });
+          reader.readAsDataURL(await content.blob());
+        });
       } else {
-        return content as T;
+        return (await content.text()) as T;
       }
     }
     return null;
@@ -118,18 +128,21 @@ export const useAzure = (site: Site): Backend => {
         ?.sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name.replace("refs/heads/", "")) ?? [],
     listFiles: async (path: string) => {
+      if (!path) return [];
       await syncTree();
       const files = path
         .split("/")
         .reduce((a, v) => (a ? a[v] : undefined), tree);
-      return Object.values(files ?? {}).map(
-        ({
-          path,
-          latestProcessedChange: {
-            author: { name: author, date },
-          },
-        }) => ({ path, author, date })
-      );
+      return Object.values(files ?? {})
+        .filter(({ path }) => !!path)
+        .map(
+          ({
+            path,
+            latestProcessedChange: {
+              author: { name: author, date },
+            },
+          }) => ({ path, author, date })
+        );
     },
     loadSettings: async () => loadFile(".forestry/settings.yml"),
     loadFile: (path: string) => loadFile(path),

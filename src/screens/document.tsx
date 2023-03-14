@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Divider, Typography } from "@mui/material";
 import { useBackend } from "../backends/backend";
 import { useSite } from "../hooks/site";
 import { useEffect, useState } from "react";
@@ -14,7 +14,8 @@ export const Document = () => {
   const { "*": path } = useParams();
   const { site } = useSite();
   const { loadFile } = useBackend(site);
-  const [content, setContent] = useState<string>();
+  const [meta, setMeta] = useState({});
+  const [body, setBody] = useState<string>();
   useEffect(() => {
     loadFile(path).then(async (content) => {
       const { data, value } = await unified()
@@ -27,18 +28,19 @@ export const Document = () => {
         })
         .use(html)
         .process(content);
-      console.log(data);
-      setContent(value);
+      setMeta(data);
+      setBody(value);
     });
   }, [path]);
   return (
     <Box
       sx={{
         p: 2,
-        display: "flex",
       }}
     >
-      <Typography dangerouslySetInnerHTML={{ __html: content }} />
+      <Box sx={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(meta, null, 2)}</Box>
+      <Divider />
+      <Typography dangerouslySetInnerHTML={{ __html: body }} />
     </Box>
   );
 };

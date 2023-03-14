@@ -18,3 +18,13 @@ export const slugify = (str) =>
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+export const isYaml = (path: string) =>
+  path.endsWith(".yml") || path.endsWith(".yaml");
+
+export const isImage = (path: string) =>
+  path.endsWith(".png") ||
+  path.endsWith(".jpg") ||
+  path.endsWith(".jpeg") ||
+  path.endsWith(".webp") ||
+  path.endsWith(".gif");

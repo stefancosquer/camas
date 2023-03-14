@@ -137,8 +137,10 @@ export const App = () => {
         sx={{
           pl: "240px",
           flexGrow: 1,
+          width: "100vw",
           height: "100vh",
-          overflow: "auto",
+          overflowX: "hidden",
+          overflowY: "auto",
         }}
       >
         <Outlet />

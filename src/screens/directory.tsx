@@ -23,6 +23,7 @@ export const Directory = () => {
   return (
     <Box
       sx={{
+        p: 2,
         display: "flex",
         height: "100vh",
       }}

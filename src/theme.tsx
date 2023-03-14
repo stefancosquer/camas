@@ -26,7 +26,15 @@ const base = {
   },
 };
 
-export const theme = createTheme(base);
+export const theme = createTheme(
+  {
+    palette: {
+      mode: "light",
+      background: { paper: "#f6f8fa" },
+    },
+  },
+  base
+);
 export const darkTheme = createTheme(
   {
     palette: {

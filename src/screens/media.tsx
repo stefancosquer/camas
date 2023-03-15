@@ -9,7 +9,7 @@ export const Media = () => {
   const [media, setMedia] = useState<{ path: string; date: string }[]>([]);
   useEffect(() => {
     listMedia().then(setMedia);
-  }, []);
+  }, [listMedia]);
   return (
     <Box>
       <Box sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>

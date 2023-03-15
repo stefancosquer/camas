@@ -7,6 +7,6 @@ export const useFiles = (path: string) => {
   const [files, setFiles] = useState<Leaf[]>([]);
   useEffect(() => {
     listFiles(path).then(setFiles);
-  }, [path]);
+  }, [path, listFiles]);
   return files.slice().sort((a, b) => b.date.localeCompare(a.date));
 };

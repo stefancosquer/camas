@@ -1,7 +1,7 @@
 import { useAzure } from "./azure";
 import { useBitbucket } from "./bitbucket";
 import { useGithub } from "./github";
-import { File, Settings, Site } from "../model";
+import { Leaf, Site } from "../model";
 
 export type Backend = {
   needOrg: boolean;
@@ -11,9 +11,8 @@ export type Backend = {
     { id: string; name: string; branch: string }[]
   >;
   listBranches: () => Promise<string[]>;
-  listFiles: (path: string) => Promise<File[]>;
-  loadSettings: () => Promise<Settings>;
-  loadFile: (path: string) => Promise<string>;
+  loadTree: () => Promise<Leaf[]>;
+  loadContent: (url: string) => Promise<Response>;
 };
 
 const useDummy = (): Backend => {
@@ -23,9 +22,8 @@ const useDummy = (): Backend => {
     listProjects: async () => [],
     listRepositories: async () => [],
     listBranches: async () => [],
-    listFiles: async () => [],
-    loadSettings: async () => void 0,
-    loadFile: async () => void 0,
+    loadContent: async () => void 0,
+    loadTree: async () => void 0,
   };
 };
 

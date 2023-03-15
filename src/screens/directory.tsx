@@ -7,19 +7,11 @@ import {
   ListItemText,
 } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { useSite } from "../hooks/site";
-import { useBackend } from "../backends/backend";
-import { useEffect, useState } from "react";
-import { File } from "../model";
+import { useFiles } from "../hooks/files";
 
 export const Directory = () => {
   const { slug, "*": path } = useParams();
-  const { site } = useSite();
-  const { listFiles } = useBackend(site);
-  const [files, setFiles] = useState<File[]>([]);
-  useEffect(() => {
-    listFiles(path).then(setFiles);
-  }, [path]);
+  const files = useFiles(path);
   return (
     <Box
       sx={{
@@ -32,7 +24,10 @@ export const Directory = () => {
         {files.map(({ path, author, date }, index) => (
           <ListItem key={index} divider disablePadding>
             <ListItemButton component={Link} href={`/${slug}/doc${path}`}>
-              <ListItemText primary={path} secondary={`${author}-${date}`} />
+              <ListItemText
+                primary={path.split("/").pop()}
+                secondary={`${author}-${date}`}
+              />
             </ListItemButton>
           </ListItem>
         ))}

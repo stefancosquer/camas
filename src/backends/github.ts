@@ -47,8 +47,7 @@ export const useGithub = (site: Site): Backend => {
       )
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name),
-    listFiles: async () => [],
-    loadSettings: async () => void 0,
-    loadFile: async () => void 0,
+    loadContent: async () => void 0,
+    loadTree: async () => void 0,
   };
 };

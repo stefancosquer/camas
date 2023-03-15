@@ -14,9 +14,6 @@ import {
   SvgIcon,
 } from "@mui/material";
 import { useSite } from "../hooks/site";
-import { useBackend } from "../backends/backend";
-import { useEffect, useState } from "react";
-import { Settings } from "../model";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -57,13 +54,8 @@ const DrawerItem = ({
 };
 
 export const App = () => {
-  const { site } = useSite();
+  const { site, settings } = useSite();
   const { slug } = useParams();
-  const [settings, setSettings] = useState<Settings>();
-  const { loadSettings } = useBackend(site);
-  useEffect(() => {
-    if (site) loadSettings().then(setSettings);
-  }, [site]);
   if (!site) return null;
   return (
     <Box sx={{ height: "100vh", width: "100vw", display: "flex" }}>

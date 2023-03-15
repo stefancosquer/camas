@@ -10,7 +10,17 @@ export type Site = {
   branch: string;
 };
 
-export type File = { path: string; author: string; date: string };
+export type Leaf = {
+  url: string;
+  path: string;
+  author: string;
+  date: string;
+  folder: boolean;
+};
+
+export type Tree = {
+  [key: string]: Leaf | Tree;
+};
 
 export type Settings = {
   admin_path: string;

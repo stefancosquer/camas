@@ -6,8 +6,8 @@ import {
   useState,
 } from "react";
 import { useParams } from "react-router-dom";
-import { slugify } from "../utils";
-import { File, Settings, Site } from "../model";
+import { isImage, isYaml, slugify } from "../utils";
+import { Leaf, Settings, Site, Tree } from "../model";
 import { useBackend } from "../backends/backend";
 import { unified } from "unified";
 import parse from "remark-parse";
@@ -18,7 +18,9 @@ import html from "remark-html";
 
 const SiteContext = createContext<{
   site?: Site;
-  listMedia: () => Promise<File[]>;
+  settings?: Settings;
+  listFiles: (path: string) => Promise<Leaf[]>;
+  listMedia: () => Promise<Leaf[]>;
   loadMedia: (path: string) => Promise<string>;
   loadDocument: (
     path: string
@@ -29,6 +31,7 @@ const SiteContext = createContext<{
   setSite: (site: Site) => void;
 }>({
   sites: [],
+  listFiles: () => void 0,
   listMedia: () => void 0,
   loadMedia: () => void 0,
   loadDocument: () => void 0,
@@ -40,12 +43,13 @@ const SiteContext = createContext<{
 export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   const [site, setSite] = useState<Site>();
   const [settings, setSettings] = useState<Settings>();
-  const { loadSettings, listFiles, loadFile } = useBackend(site);
+  const { loadContent, loadTree } = useBackend(site);
   const { slug } = useParams();
   const [sites, setSites] = useState<Site[]>(() => {
     const value = localStorage.getItem("sites");
     return value ? JSON.parse(value) : [];
   });
+  const [tree, setTree] = useState<Tree>();
   useEffect(() => {
     if (!slug) setSite(undefined);
     else setSite(sites.find(({ name }) => slug === slugify(name)));
@@ -54,22 +58,82 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
     localStorage.setItem("sites", JSON.stringify(sites));
   }, [sites]);
   useEffect(() => {
-    if (site) loadSettings().then(setSettings);
+    if (site) {
+      (async () => {
+        setTree(undefined);
+        const leafs = await loadTree();
+        const tree: Tree = {};
+        for (const leaf of leafs) {
+          if (!leaf.folder) {
+            const parts = leaf.path.split("/");
+            let current: Tree = tree;
+            for (let i = 1; i < parts.length; i++) {
+              const part = parts[i];
+              if (!current[part]) {
+                if (i === parts.length - 1) {
+                  current[part] = leaf;
+                } else {
+                  current[part] = {};
+                }
+              }
+              current = current[part] as Tree;
+            }
+          }
+        }
+        setTree(tree);
+      })();
+    }
   }, [site]);
+  useEffect(() => {
+    loadFile(".forestry/settings.yml").then(setSettings);
+  }, [tree]);
   const addSite = (site) => setSites([...sites, site]);
   const removeSite = (index) => setSites(sites.filter((_, i) => i !== index));
+  const listFiles = async (path: string): Promise<Leaf[]> => {
+    if (!path) return [];
+    const files = path
+      .split("/")
+      .reduce((a, v) => (a ? a[v] : undefined), tree);
+    return Object.values(files ?? {}).filter(({ path }) => !!path);
+  };
+  const loadFile = async <T extends string | object>(
+    path: string
+  ): Promise<T> => {
+    const url = path
+      .replace(/^\/|\/$/g, "")
+      .split("/")
+      .reduce((a, v) => (a ? a[v] : undefined), tree)?.url;
+    if (url) {
+      const content = await loadContent(url as string);
+      if (path.endsWith(".json")) {
+        return JSON.parse(await content.text());
+      } else if (isYaml(path)) {
+        return load(await content.text()) as T;
+      } else if (isImage(path)) {
+        return await new Promise(async (resolve) => {
+          const reader = new FileReader();
+          reader.addEventListener("load", () => {
+            // TODO add resize
+            resolve(reader.result as T);
+          });
+          reader.readAsDataURL(await content.blob());
+        });
+      } else {
+        return (await content.text()) as T;
+      }
+    }
+    return null;
+  };
   const listMedia = async () => {
-    //TODO should be better place outside
-    const settings = await loadSettings();
     return listFiles(settings?.upload_dir);
   };
   const loadMedia = async (path: string) => {
     // TODO use cache
-    return await loadFile(path);
+    return await loadFile<string>(path);
   };
   const loadDocument = async (path: string) => {
     // TODO attach template
-    const content = await loadFile(path);
+    const content: string = await loadFile(path);
     if (path.endsWith(".md")) {
       const { data, value } = await unified()
         .use(parse)
@@ -89,6 +153,8 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
     <SiteContext.Provider
       value={{
         site,
+        settings,
+        listFiles,
         listMedia,
         loadMedia,
         loadDocument,

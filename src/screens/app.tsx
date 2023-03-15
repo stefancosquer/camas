@@ -112,9 +112,9 @@ export const App = () => {
               href={`/${slug}/media`}
             />
             <DrawerItem
-              label="Types"
+              label="Templates"
               Icon={DashboardCustomizeOutlinedIcon}
-              href={`/${slug}/types`}
+              href={`/${slug}/templates`}
             />
             <DrawerItem
               label="Settings"

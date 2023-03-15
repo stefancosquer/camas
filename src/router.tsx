@@ -5,9 +5,10 @@ import { Root } from "./components/root";
 import { Welcome } from "./screens/welcome";
 import { Media } from "./screens/media";
 import { Settings } from "./screens/settings";
-import { Types } from "./screens/types";
+import { Templates } from "./screens/templates";
 import { Document } from "./screens/document";
 import { Directory } from "./screens/directory";
+import { Template } from "./screens/template";
 
 export const router = createBrowserRouter([
   {
@@ -43,8 +44,12 @@ export const router = createBrowserRouter([
             element: <Media />,
           },
           {
-            path: "types",
-            element: <Types />,
+            path: "templates",
+            element: <Templates />,
+          },
+          {
+            path: "templates/:template",
+            element: <Template />,
           },
           {
             path: "settings",

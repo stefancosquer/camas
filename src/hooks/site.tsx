@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useParams } from "react-router-dom";
 import { isImage, isYaml, slugify } from "../utils";
-import { Leaf, Settings, Site, Tree } from "../model";
+import { Leaf, Settings, Site, Template, Tree } from "../model";
 import { useBackend } from "../backends/backend";
 import { unified } from "unified";
 import parse from "remark-parse";
@@ -85,13 +85,25 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
     }
   }, [site]);
   useEffect(() => {
-    loadFile(".forestry/settings.yml").then(setSettings);
+    (async () => {
+      if (tree) {
+        const settings = await loadFile<Settings>("/.forestry/settings.yml");
+        settings.templates = await Promise.all(
+          (
+            await listFiles("/.forestry/front_matter/templates")
+          ).map(({ path }) => loadFile<Template>(path))
+        );
+        setSettings(settings);
+        console.log(tree, settings);
+      }
+    })();
   }, [tree]);
   const addSite = (site) => setSites([...sites, site]);
   const removeSite = (index) => setSites(sites.filter((_, i) => i !== index));
   const listFiles = async (path: string): Promise<Leaf[]> => {
     if (!path) return [];
     const files = path
+      .replace(/^\/|\/$/g, "")
       .split("/")
       .reduce((a, v) => (a ? a[v] : undefined), tree);
     return Object.values(files ?? {}).filter(({ path }) => !!path);

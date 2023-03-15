@@ -94,7 +94,6 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
           ).map(({ path }) => loadFile<Template>(path))
         );
         setSettings(settings);
-        console.log(tree, settings);
       }
     })();
   }, [tree]);

@@ -71,6 +71,7 @@ export const Media = () => {
       <Divider />
       <Grid sx={{ p: 2 }} spacing={2} container>
         {media
+          .slice()
           .sort((a, b) => b.date.localeCompare(a.date))
           .map(({ path }) => (
             <Grid key={path} item xs={12} sm={6} md={4} lg={3}>

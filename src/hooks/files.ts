@@ -8,5 +8,5 @@ export const useFiles = (path: string) => {
   useEffect(() => {
     listFiles(path).then(setFiles);
   }, [path]);
-  return files;
+  return files.slice().sort((a, b) => b.date.localeCompare(a.date));
 };

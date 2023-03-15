@@ -91,7 +91,10 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         settings.templates = await Promise.all(
           (
             await listFiles("/.forestry/front_matter/templates")
-          ).map(({ path }) => loadFile<Template>(path))
+          ).map(async ({ path }) => ({
+            name: path.split("/").pop().split(".").shift(),
+            ...(await loadFile<Template>(path)),
+          }))
         );
         setSettings(settings);
       }

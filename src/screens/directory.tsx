@@ -20,7 +20,15 @@ export const Directory = () => {
   const files = useFiles(path);
   return (
     <Box>
-      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          height: "72px",
+        }}
+      >
         <Typography variant="h6">Directory</Typography>
         <Button onClick={() => {}} size="small" variant="outlined">
           Add

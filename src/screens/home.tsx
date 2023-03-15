@@ -20,9 +20,10 @@ import {
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useBackend } from "../backends/backend";
-import { Site, useSite } from "../hooks/site";
+import { useSite } from "../hooks/site";
 import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 import { slugify } from "../utils";
+import { Site } from "../model";
 
 const DEFAULT: Site = {
   name: "",
@@ -137,7 +138,7 @@ export const Home = () => {
         </Box>
         <Divider />
         {editing && (
-          <Stack spacing={1}>
+          <Stack spacing={2}>
             <Stepper sx={{ mt: 3, mb: 2 }} activeStep={step}>
               <Step>
                 <StepLabel>Site</StepLabel>

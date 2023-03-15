@@ -31,30 +31,29 @@ export type Settings = {
   public_path: "/media";
   webhook_url: null;
   version: string;
-  sections: (
-    | {
-        type: "heading";
-        label: string;
-        path: undefined;
-      }
-    | {
-        type: "document";
-        path: string;
-        label: string;
-      }
-    | {
-        type: "directory";
-        path: string;
-        label: string;
-        create: string;
-        match: string;
-        templates: string[];
-      }
-  )[];
+  sections: { label: string } & (Heading | Document | Directory)[];
   templates: Template[];
 };
 
+export type Heading = {
+  type: "heading";
+};
+
+export type Document = {
+  type: "document";
+  path: string;
+};
+
+export type Directory = {
+  type: "directory";
+  path: string;
+  create: "all" | "documents" | " none";
+  match: string;
+  templates: string[];
+};
+
 export type Template = {
+  name: string;
   label: string;
   hide_body: boolean;
   fields: Field[];
@@ -66,7 +65,6 @@ export type Field = {
   name: string;
   description: string;
   hidden: boolean;
-  config: {};
 } & (
   | {
       type: "text";
@@ -76,6 +74,7 @@ export type Field = {
         min: number;
         max: number;
       };
+      value: string;
     }
   | {
       type: "textarea";
@@ -89,6 +88,7 @@ export type Field = {
           format: "markdown" | "html-blocks" | "html";
         };
       };
+      value: string;
     }
   | {
       type: "number";
@@ -99,10 +99,12 @@ export type Field = {
         max: number;
         step: number;
       };
+      value: number;
     }
   | {
       type: "boolean";
       default: boolean;
+      value: boolean;
     }
   | {
       type: "select";
@@ -117,6 +119,7 @@ export type Field = {
           path: string;
         };
       };
+      value: string;
     }
   | {
       type: "datetime";
@@ -128,6 +131,7 @@ export type Field = {
         display_utc: boolean; // false
         export_format: string; // YYYY-MM-DD h:mm A
       };
+      value: string;
     }
   | {
       type: "color";
@@ -136,10 +140,12 @@ export type Field = {
         required: boolean;
         color_format: "Hex" | "RGB";
       };
+      value: string;
     }
   | {
       type: "tag_list";
       default: string[];
+      value: string[];
     }
   | {
       type: "list";
@@ -156,6 +162,7 @@ export type Field = {
             };
           }
       );
+      value: string[];
     }
   | {
       type: "file";
@@ -163,13 +170,16 @@ export type Field = {
       config: {
         maxSize: number;
       };
+      value: string;
     }
   | {
       type: "image_gallery";
+      value: string[];
     }
   | {
       type: "field_group";
       fields: Field[];
+      value: Record<string, unknown>;
     }
   | {
       type: "field_group_list";
@@ -179,6 +189,7 @@ export type Field = {
         max: number;
         labelField: string;
       };
+      value: Record<string, unknown>[];
     }
   | {
       type: "blocks";
@@ -187,9 +198,11 @@ export type Field = {
         min: number;
         max: number;
       };
+      value: Record<string, unknown>[];
     }
   | {
       type: "include";
       template: string;
+      value: Record<string, unknown>;
     }
 );

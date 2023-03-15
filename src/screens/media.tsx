@@ -12,7 +12,15 @@ export const Media = () => {
   }, [listMedia]);
   return (
     <Box>
-      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          alignItems: "center",
+          height: "72px",
+          justifyContent: "space-between",
+        }}
+      >
         <Typography variant="h6">Media</Typography>
         <Button onClick={() => {}} size="small" variant="outlined">
           Upload

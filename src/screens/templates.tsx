@@ -22,7 +22,15 @@ export const Templates = () => {
   if (!settings) return null;
   return (
     <Box>
-      <Box sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          alignItems: "center",
+          height: "72px",
+          justifyContent: "space-between",
+        }}
+      >
         <Typography variant="h6">Templates</Typography>
         <Button onClick={() => {}} size="small" variant="outlined">
           Add

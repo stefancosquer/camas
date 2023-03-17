@@ -36,7 +36,7 @@ export const useAzure = (site: Site): Backend => ({
       .map(({ id, name, defaultBranch }) => ({
         id,
         name,
-        branch: defaultBranch,
+        branch: defaultBranch.replace("refs/heads/", ""),
       })) ?? [],
   listBranches: async () =>
     (

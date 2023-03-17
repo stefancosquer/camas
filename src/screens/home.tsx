@@ -43,9 +43,8 @@ export const Home = () => {
   const [site, setSite] = useState(DEFAULT);
   const [projects, setProjects] = useState([]);
   const [repositories, setRepositories] = useState([]);
-  const [branches, setBranches] = useState([]);
   const { sites, addSite, removeSite } = useSite();
-  const { listProjects, listRepositories, listBranches, needOrg, needUser } =
+  const { listProjects, listRepositories, needOrg, needUser } =
     useBackend(site);
   const back = () => {
     if (step === 1) {
@@ -101,16 +100,6 @@ export const Home = () => {
       }
     })();
   }, [site.project]);
-  useEffect(() => {
-    (async () => {
-      setSite({ ...site, branch: "" });
-      if (site.repository !== "") {
-        setBranches(await listBranches());
-      } else {
-        setBranches([]);
-      }
-    })();
-  }, [site.repository]);
   return (
     <Grid
       sx={{ minHeight: "100vh", pt: 6 }}
@@ -265,29 +254,18 @@ export const Home = () => {
                   disabled={repositories.length === 0}
                   value={site.repository}
                   onChange={(event) =>
-                    setSite({ ...site, repository: event.target.value })
+                    setSite({
+                      ...site,
+                      repository: event.target.value,
+                      branch: repositories.find(
+                        ({ id }) => id === event.target.value
+                      ).branch,
+                    })
                   }
                 >
                   {repositories.map(({ id, name }) => (
                     <MenuItem key={id} value={id}>
                       {name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  label="Branch"
-                  disabled={branches.length === 0}
-                  value={site.branch}
-                  onChange={(event) =>
-                    setSite({ ...site, branch: event.target.value })
-                  }
-                >
-                  {branches.map((branch) => (
-                    <MenuItem key={branch} value={branch}>
-                      {branch}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -326,6 +304,7 @@ export const Home = () => {
                       <Link
                         sx={{
                           color: "text.primary",
+                          fontWeight: "medium",
                           cursor: "pointer",
                           textDecoration: "none",
                           ":hover": { textDecoration: "underline" },

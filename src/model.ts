@@ -31,21 +31,25 @@ export type Settings = {
   public_path: "/media";
   webhook_url: null;
   version: string;
-  sections: { label: string } & (Heading | Document | Directory)[];
+  sections: (Heading | Document | Directory)[];
   templates: Template[];
 };
 
 export type Heading = {
   type: "heading";
+  label: string;
+  path: undefined;
 };
 
 export type Document = {
   type: "document";
+  label: string;
   path: string;
 };
 
 export type Directory = {
   type: "directory";
+  label: string;
   path: string;
   create: "all" | "documents" | " none";
   match: string;

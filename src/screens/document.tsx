@@ -6,16 +6,17 @@ import {
   Button,
   Divider,
   FormControlLabel,
+  MenuItem,
   Stack,
   Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { useSite } from "../hooks/site";
+import * as React from "react";
 import { FC, PropsWithChildren, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Directory, Field, Template } from "../model";
-import * as React from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DragHandleOutlinedIcon from "@mui/icons-material/DragHandleOutlined";
 
@@ -89,6 +90,44 @@ const FIELDS: {
       value={value ?? ""}
     />
   ),
+  datetime: ({ label, description, value }) => {
+    const datetime = new Date(value);
+    datetime.setMinutes(datetime.getMinutes() - datetime.getTimezoneOffset());
+    return (
+      <TextField
+        type="datetime-local"
+        size="small"
+        label={label}
+        fullWidth
+        helperText={description}
+        value={datetime.toISOString().slice(0, 16)}
+      />
+    );
+  },
+  select: ({
+    label,
+    config: {
+      required,
+      source: { type },
+      options,
+    },
+    value = "",
+  }) => (
+    <TextField
+      select
+      fullWidth
+      label={label}
+      size="small"
+      value={value}
+      required={required}
+    >
+      {options?.map((option) => (
+        <MenuItem key={option} value={option}>
+          {option}
+        </MenuItem>
+      ))}
+    </TextField>
+  ),
   boolean: ({ label, value }) => (
     <FormControlLabel control={<Switch checked={value} />} label={label} />
   ),
@@ -155,7 +194,7 @@ const Fields = ({
   fields: Field[];
   value: Record<string, unknown>;
 }) => (
-  <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
+  <Stack sx={{ width: "100%" }} spacing={2}>
     {fields.map((field, index) => {
       const Component: FC<Field> = FIELDS[field.type];
       return Component ? (
@@ -208,17 +247,31 @@ export const Document = () => {
         }
         if (!template) {
           // TODO template from content
+          template = {
+            name: "generated",
+            hide_body: !path.endsWith(".md"),
+            label: "Generated",
+            fields: [],
+            pages: [path],
+          };
         }
         setTemplate(template);
         const { meta, body } = await loadDocument(path);
         setMeta(meta);
         setBody(body);
+        console.log(template);
       })();
     }
   }, [path, settings]);
   if (!template || !meta) return null;
   return (
-    <Box>
+    <Box
+      sx={{
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box
         sx={{
           p: 2,
@@ -234,16 +287,27 @@ export const Document = () => {
         </Button>
       </Box>
       <Divider />
-      <Box sx={{ p: 2, display: "flex" }} justifyContent="center">
-        <Fields fields={template.fields} value={meta} />
-      </Box>
-      <Box sx={{ whiteSpace: "pre-wrap" }}>
-        {JSON.stringify(template, null, 2)}
-      </Box>
-      <Divider />
-      <Box sx={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(meta, null, 2)}</Box>
-      <Divider />
-      <Typography dangerouslySetInnerHTML={{ __html: body }} />
+      <Stack sx={{ flex: 1, justifyContent: "center" }} direction="row">
+        <Box sx={{ px: 2, py: 4, display: "flex", flex: 2, maxWidth: "640px" }}>
+          <Fields fields={template.fields} value={meta} />
+        </Box>
+        {!template.hide_body && (
+          <>
+            <Divider orientation="vertical" flexItem />
+            <Box
+              sx={{
+                p: 2,
+                flex: 3,
+                "pre, code": {
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                },
+              }}
+              dangerouslySetInnerHTML={{ __html: body }}
+            />
+          </>
+        )}
+      </Stack>
     </Box>
   );
 };

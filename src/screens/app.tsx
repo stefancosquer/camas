@@ -126,7 +126,7 @@ export const App = () => {
               }}
               size="small"
               variant="outlined"
-              value={site.branch}
+              value={branches.length === 0 ? "" : site.branch}
               select
             >
               {branches.map((branch) => (

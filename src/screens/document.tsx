@@ -267,7 +267,7 @@ export const Document = () => {
   return (
     <Box
       sx={{
-        minHeight: "100%",
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
       }}
@@ -287,8 +287,20 @@ export const Document = () => {
         </Button>
       </Box>
       <Divider />
-      <Stack sx={{ flex: 1, justifyContent: "center" }} direction="row">
-        <Box sx={{ px: 2, py: 4, display: "flex", flex: 2, maxWidth: "640px" }}>
+      <Stack
+        sx={{ flex: 1, justifyContent: "center", overflow: "hidden" }}
+        direction="row"
+      >
+        <Box
+          sx={{
+            px: 2,
+            py: 4,
+            display: "flex",
+            flex: 2,
+            maxWidth: "640px",
+            overflow: "auto",
+          }}
+        >
           <Fields fields={template.fields} value={meta} />
         </Box>
         {!template.hide_body && (
@@ -298,6 +310,7 @@ export const Document = () => {
               sx={{
                 p: 2,
                 flex: 3,
+                overflow: "auto",
                 "pre, code": {
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",

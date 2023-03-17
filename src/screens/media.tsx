@@ -11,7 +11,13 @@ export const Media = () => {
     listMedia().then(setMedia);
   }, [listMedia]);
   return (
-    <Box>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box
         sx={{
           p: 2,
@@ -27,16 +33,18 @@ export const Media = () => {
         </Button>
       </Box>
       <Divider />
-      <Grid sx={{ p: 2 }} spacing={2} container>
-        {media
-          .slice()
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .map(({ path }) => (
-            <Grid key={path} item xs={12} sm={6} md={4} lg={3}>
-              <Image path={path} />
-            </Grid>
-          ))}
-      </Grid>
+      <Box sx={{ flex: 1, overflow: "auto" }}>
+        <Grid sx={{ p: 2 }} spacing={2} container>
+          {media
+            .slice()
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .map(({ path }) => (
+              <Grid key={path} item xs={12} sm={6} md={4} lg={3}>
+                <Image path={path} />
+              </Grid>
+            ))}
+        </Grid>
+      </Box>
     </Box>
   );
 };

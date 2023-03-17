@@ -19,7 +19,13 @@ export const Directory = () => {
   const { slug, "*": path } = useParams();
   const files = useFiles(path);
   return (
-    <Box>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box
         sx={{
           p: 2,
@@ -35,7 +41,7 @@ export const Directory = () => {
         </Button>
       </Box>
       <Divider />
-      <List sx={{ px: 2, py: 0, width: "100%" }}>
+      <List sx={{ px: 2, py: 0, width: "100%", overflow: "auto", flex: 1 }}>
         {files.map(({ path, author, date }, index) => (
           <ListItem key={index} divider disablePadding>
             <ListItemButton

@@ -21,7 +21,13 @@ export const Templates = () => {
   const { settings } = useSite();
   if (!settings) return null;
   return (
-    <Box>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box
         sx={{
           p: 2,
@@ -37,7 +43,7 @@ export const Templates = () => {
         </Button>
       </Box>
       <Divider />
-      <List sx={{ px: 2, py: 0, width: "100%" }}>
+      <List sx={{ px: 2, py: 0, width: "100%", flex: 1, overflow: "auto" }}>
         {settings.templates.map(({ label }, index) => (
           <ListItem key={index} divider disablePadding>
             <ListItemButton

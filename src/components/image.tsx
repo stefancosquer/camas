@@ -45,7 +45,7 @@ export const Image = ({
         border: 1,
         borderColor: "grey.300",
         bgcolor: "background.paper",
-        pt: "100%",
+        pt: content ? "56.25%" : "100%",
       }}
     >
       <Box

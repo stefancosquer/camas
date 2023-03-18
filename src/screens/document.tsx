@@ -19,6 +19,7 @@ import { useParams } from "react-router-dom";
 import { Directory, Field, Template } from "../model";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DragHandleOutlinedIcon from "@mui/icons-material/DragHandleOutlined";
+import { Image } from "../components/image";
 
 const Group = ({
   label,
@@ -168,11 +169,14 @@ const FIELDS: {
       ))}
     </Group>
   ),
-  file: ({ label }) => (
-    <Button variant="contained" component="label">
-      Upload
-      <input hidden accept="image/*" multiple type="file" />
-    </Button>
+  file: ({ label, value }) => (
+    <>
+      <Image path={value} content />
+      <Button variant="contained" component="label">
+        Upload
+        <input hidden accept="image/*" multiple type="file" />
+      </Button>
+    </>
   ),
   include: ({ name, template, value }) => {
     const { settings } = useSite();
@@ -194,7 +198,7 @@ const Fields = ({
   fields: Field[];
   value: Record<string, unknown>;
 }) => (
-  <Stack sx={{ width: "100%" }} spacing={2}>
+  <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
     {fields.map((field, index) => {
       const Component: FC<Field> = FIELDS[field.type];
       return Component ? (
@@ -297,8 +301,8 @@ export const Document = () => {
             py: 4,
             display: "flex",
             flex: 2,
-            maxWidth: "640px",
             overflow: "auto",
+            justifyContent: "center",
           }}
         >
           <Fields fields={template.fields} value={meta} />

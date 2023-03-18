@@ -4,16 +4,31 @@ import { useEffect, useRef, useState } from "react";
 import { isImage } from "../utils";
 import { Box } from "@mui/material";
 
-export const Image = ({ path }: { path: string }) => {
-  const { loadMedia } = useSite();
+export const Image = ({
+  path,
+  content = false,
+}: {
+  path: string;
+  content?: boolean;
+}) => {
+  const {
+    loadMedia,
+    settings: { upload_dir, public_path },
+  } = useSite();
   const [loaded, setLoaded] = useState(false);
   const [src, setSrc] = useState<string>();
   const ref = useRef();
+  const realPath = content
+    ? `/${upload_dir.replace(/^\/|\/$/g, "")}/${path
+        .replace(/^\/|\/$/g, "")
+        .replace(new RegExp(`^${public_path.replace(/^\/|\/$/g, "")}`), "")
+        .replace(/^\/|\/$/g, "")}`
+    : path;
   const handle = (entries) => {
     if (!loaded && entries[0].isIntersecting) {
       setLoaded(true);
-      if (isImage(path)) {
-        loadMedia(path).then(setSrc);
+      if (isImage(realPath)) {
+        loadMedia(realPath).then(setSrc);
       }
     }
   };

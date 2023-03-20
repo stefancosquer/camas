@@ -111,7 +111,7 @@ export type Field = {
       default: string;
       config: {
         required: boolean;
-        options: string[];
+        options?: string[];
         source: {
           type: "simple" | "pages" | "documents";
           section: string;

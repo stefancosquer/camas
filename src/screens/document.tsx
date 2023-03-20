@@ -17,12 +17,13 @@ import { useSite } from "../hooks/site";
 import * as React from "react";
 import { FC, PropsWithChildren, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Directory, Field, Template, Value } from "../model";
+import { Directory, Field, Settings, Template, Value } from "../model";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DragHandleOutlinedIcon from "@mui/icons-material/DragHandleOutlined";
 import { Image } from "../components/image";
 import { isImage } from "../utils";
 import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 const Group = ({
   label,
@@ -34,6 +35,8 @@ const Group = ({
     TransitionProps={{ unmountOnExit: true }}
     disableGutters
     sx={{
+      borderRadius: 1,
+      borderColor: "grey.400",
       bgcolor: "background.default",
       width: "100%",
       ":before": { display: "none" },
@@ -79,19 +82,21 @@ const Group = ({
 
 const FIELDS: {
   [K in Field["type"]]?: FC<
-    Extract<Field, { type: K }> & Extract<Value, { type: K }>
+    Extract<Field, { type: K }> &
+      Extract<Value, { type: K }> & { settings: Settings }
   >;
 } = {
-  text: ({ label, description, value }) => (
+  text: ({ label, description, config, value }) => (
     <TextField
       size="small"
       label={label}
       fullWidth
       helperText={description}
       value={value ?? ""}
+      required={config?.required}
     />
   ),
-  number: ({ label, description, value }) => (
+  number: ({ label, description, config, value }) => (
     <TextField
       type="number"
       size="small"
@@ -99,9 +104,10 @@ const FIELDS: {
       fullWidth
       helperText={description}
       value={value ?? ""}
+      required={config?.required}
     />
   ),
-  textarea: ({ label, description, value }) => (
+  textarea: ({ label, description, config, value }) => (
     <TextField
       size="small"
       label={label}
@@ -110,9 +116,10 @@ const FIELDS: {
       rows={4}
       helperText={description}
       value={value ?? ""}
+      required={config?.required}
     />
   ),
-  datetime: ({ label, description, value }) => {
+  datetime: ({ label, description, config, value }) => {
     const datetime = new Date(value);
     datetime.setMinutes(datetime.getMinutes() - datetime.getTimezoneOffset());
     return (
@@ -123,6 +130,7 @@ const FIELDS: {
         fullWidth
         helperText={description}
         value={datetime.toISOString().slice(0, 16)}
+        required={config?.required}
       />
     );
   },
@@ -130,26 +138,35 @@ const FIELDS: {
     label,
     config: {
       required,
-      source: { type },
-      options,
+      source: { type, section, file, path },
+      options = [],
     },
     value = "",
-  }) => (
-    <TextField
-      select
-      fullWidth
-      label={label}
-      size="small"
-      value={value}
-      required={required}
-    >
-      {options?.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </TextField>
-  ),
+    settings,
+  }) => {
+    if (type === "pages") {
+      options = settings.templates
+        .flatMap(({ pages = [] }) => pages)
+        .filter((item, index, array) => array.indexOf(item) === index)
+        .sort((a, b) => a.localeCompare(b));
+    }
+    return (
+      <TextField
+        select
+        fullWidth
+        label={label}
+        size="small"
+        value={value}
+        required={required}
+      >
+        {options?.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
+          </MenuItem>
+        ))}
+      </TextField>
+    );
+  },
   boolean: ({ label, value }) => (
     <FormControlLabel control={<Switch checked={value} />} label={label} />
   ),
@@ -183,14 +200,63 @@ const FIELDS: {
       </Stack>
     </Group>
   ),
-  list: ({ label, value }) => (
-    <Group label={`${label} (not implemented)`} draggable>
-      {value?.map((v) => (
-        <Box key={v}>{v}</Box>
-      ))}
+  list: ({ label, description, value }) => (
+    <Group label={label}>
+      <Stack sx={{ width: "100%" }} spacing={2}>
+        <Stack direction="row" spacing={1}>
+          <TextField
+            fullWidth
+            size="small"
+            sx={{ ".MuiInputBase-input": { py: 0.5 } }}
+          />
+          <Button onClick={() => {}} size="small" variant="outlined">
+            Add
+          </Button>
+        </Stack>
+        {value?.map((v) => (
+          <Stack
+            key={v}
+            direction="row"
+            alignItems="center"
+            sx={{
+              px: 2,
+              py: 1,
+              borderColor: "grey.400",
+              borderStyle: "solid",
+              borderWidth: "1px",
+              borderRadius: 1,
+            }}
+            spacing={2}
+          >
+            <DragHandleOutlinedIcon
+              fontSize="small"
+              sx={{ color: "text.secondary", cursor: "pointer" }}
+            />
+            <Box
+              sx={{
+                flex: 1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {v}
+            </Box>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <DeleteOutlineOutlined fontSize="small" />
+            </IconButton>
+          </Stack>
+        ))}
+      </Stack>
     </Group>
   ),
-  file: ({ label, value }) => (
+  file: ({ label, description, value }) => (
     <>
       <Image path={value} content />
       <Button variant="contained" component="label">
@@ -218,28 +284,32 @@ const Fields = ({
 }: {
   fields: Field[];
   value: Record<string, unknown>;
-}) => (
-  <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
-    {fields.map((field) => {
-      const Component: FC<any> = FIELDS[field.type];
-      return Component ? (
-        <Component
-          key={field.name}
-          value={
-            field.type === "include"
-              ? value
-              : (value?.[field.name] as Record<string, unknown>)
-          }
-          {...field}
-        />
-      ) : (
-        <Box key={field.name}>
-          Undefined {field.name} {field.type}
-        </Box>
-      );
-    })}
-  </Stack>
-);
+}) => {
+  const { settings } = useSite();
+  return (
+    <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
+      {fields.map((field) => {
+        const Component: FC<any> = FIELDS[field.type];
+        return Component ? (
+          <Component
+            key={field.name}
+            value={
+              field.type === "include"
+                ? value
+                : (value?.[field.name] as Record<string, unknown>)
+            }
+            settings={settings}
+            {...field}
+          />
+        ) : (
+          <Box key={field.name}>
+            Undefined {field.name} {field.type}
+          </Box>
+        );
+      })}
+    </Stack>
+  );
+};
 
 const generateTemplate = (data: object): Field[] =>
   Object.entries(data).map(([label, v]): Field => {
@@ -297,6 +367,16 @@ const generateTemplate = (data: object): Field[] =>
           type: "file",
           default: "",
           config: {},
+        };
+      } else if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        return {
+          label,
+          name: label,
+          description: "",
+          hidden: false,
+          type: "color",
+          default: "",
+          config: { required: false, color_format: "RGB" },
         };
       } else {
         return {
@@ -378,10 +458,21 @@ export const Document = () => {
           justifyContent: "space-between",
         }}
       >
-        <Typography variant="h6">Document</Typography>
+        <Typography variant="h6" sx={{ flex: 1 }}>
+          Document
+        </Typography>
         <Button onClick={() => {}} size="small" variant="outlined">
           Save
         </Button>
+        <IconButton
+          edge="end"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        >
+          <MoreVertIcon />
+        </IconButton>
       </Box>
       <Divider />
       <Stack

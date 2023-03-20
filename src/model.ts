@@ -75,10 +75,9 @@ export type Field = {
       default: string;
       config: {
         required: boolean;
-        min: number;
-        max: number;
+        min?: number;
+        max?: number;
       };
-      value: string;
     }
   | {
       type: "textarea";
@@ -92,23 +91,20 @@ export type Field = {
           format: "markdown" | "html-blocks" | "html";
         };
       };
-      value: string;
     }
   | {
       type: "number";
       default: number;
       config: {
-        required: boolean;
-        min: number;
-        max: number;
-        step: number;
+        required?: boolean;
+        min?: number;
+        max?: number;
+        step?: number;
       };
-      value: number;
     }
   | {
       type: "boolean";
       default: boolean;
-      value: boolean;
     }
   | {
       type: "select";
@@ -123,7 +119,6 @@ export type Field = {
           path: string;
         };
       };
-      value: string;
     }
   | {
       type: "datetime";
@@ -135,7 +130,6 @@ export type Field = {
         display_utc: boolean; // false
         export_format: string; // YYYY-MM-DD h:mm A
       };
-      value: string;
     }
   | {
       type: "color";
@@ -144,12 +138,10 @@ export type Field = {
         required: boolean;
         color_format: "Hex" | "RGB";
       };
-      value: string;
     }
   | {
       type: "tag_list";
       default: string[];
-      value: string[];
     }
   | {
       type: "list";
@@ -166,34 +158,29 @@ export type Field = {
             };
           }
       );
-      value: string[];
     }
   | {
       type: "file";
       default: string;
       config: {
-        maxSize: number;
+        maxSize?: number;
       };
-      value: string;
     }
   | {
       type: "image_gallery";
-      value: string[];
     }
   | {
       type: "field_group";
       fields: Field[];
-      value: Record<string, unknown>;
     }
   | {
       type: "field_group_list";
       fields: Field[];
       config: {
-        min: number;
-        max: number;
-        labelField: string;
+        min?: number;
+        max?: number;
+        labelField?: string;
       };
-      value: Record<string, unknown>[];
     }
   | {
       type: "blocks";
@@ -202,11 +189,71 @@ export type Field = {
         min: number;
         max: number;
       };
-      value: Record<string, unknown>[];
     }
   | {
       type: "include";
       template: string;
-      value: Record<string, unknown>;
     }
 );
+
+export type Value =
+  | {
+      type: "text";
+      value: string;
+    }
+  | {
+      type: "textarea";
+      value: string;
+    }
+  | {
+      type: "number";
+      value: number;
+    }
+  | {
+      type: "boolean";
+      value: boolean;
+    }
+  | {
+      type: "select";
+      value: string;
+    }
+  | {
+      type: "datetime";
+      value: string;
+    }
+  | {
+      type: "color";
+      value: string;
+    }
+  | {
+      type: "tag_list";
+      value: string[];
+    }
+  | {
+      type: "list";
+      value: string[];
+    }
+  | {
+      type: "file";
+      value: string;
+    }
+  | {
+      type: "image_gallery";
+      value: string[];
+    }
+  | {
+      type: "field_group";
+      value: Record<string, unknown>;
+    }
+  | {
+      type: "field_group_list";
+      value: Record<string, unknown>[];
+    }
+  | {
+      type: "blocks";
+      value: Record<string, unknown>[];
+    }
+  | {
+      type: "include";
+      value: Record<string, unknown>;
+    };

@@ -6,6 +6,7 @@ import {
   Button,
   Divider,
   FormControlLabel,
+  IconButton,
   MenuItem,
   Stack,
   Switch,
@@ -16,10 +17,12 @@ import { useSite } from "../hooks/site";
 import * as React from "react";
 import { FC, PropsWithChildren, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Directory, Field, Template } from "../model";
+import { Directory, Field, Template, Value } from "../model";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DragHandleOutlinedIcon from "@mui/icons-material/DragHandleOutlined";
 import { Image } from "../components/image";
+import { isImage } from "../utils";
+import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 
 const Group = ({
   label,
@@ -41,25 +44,43 @@ const Group = ({
     onDragEnd={() => console.log("stop dragging")}
   >
     <AccordionSummary
-      sx={{ minHeight: "38px", height: "38px" }}
+      sx={{
+        minHeight: "38px",
+        height: "38px",
+        ".MuiAccordionSummary-content": {
+          display: "flex",
+          alignItems: "center",
+        },
+      }}
       expandIcon={<ExpandMoreIcon />}
     >
-      <Box sx={{ display: "flex", alignItems: "center" }}>
-        {draggable && (
-          <DragHandleOutlinedIcon
-            fontSize="small"
-            sx={{ mr: 2, ml: 0, color: "text.secondary" }}
-          />
-        )}
-        <Typography>{label}</Typography>
-      </Box>
+      {draggable && (
+        <DragHandleOutlinedIcon
+          fontSize="small"
+          sx={{ mr: 2, ml: 0, color: "text.secondary" }}
+        />
+      )}
+      <Typography sx={{ flex: 1 }}>{label}</Typography>
+      {draggable && (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <DeleteOutlineOutlined fontSize="small" />
+        </IconButton>
+      )}
     </AccordionSummary>
     <AccordionDetails>{children}</AccordionDetails>
   </Accordion>
 );
 
 const FIELDS: {
-  [K in Field["type"]]?: FC<Extract<Field, { type: K }>>;
+  [K in Field["type"]]?: FC<
+    Extract<Field, { type: K }> & Extract<Value, { type: K }>
+  >;
 } = {
   text: ({ label, description, value }) => (
     <TextField
@@ -163,7 +184,7 @@ const FIELDS: {
     </Group>
   ),
   list: ({ label, value }) => (
-    <Group label={`${label} (not implemented)`}>
+    <Group label={`${label} (not implemented)`} draggable>
       {value?.map((v) => (
         <Box key={v}>{v}</Box>
       ))}
@@ -199,8 +220,8 @@ const Fields = ({
   value: Record<string, unknown>;
 }) => (
   <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
-    {fields.map((field, index) => {
-      const Component: FC<Field> = FIELDS[field.type];
+    {fields.map((field) => {
+      const Component: FC<any> = FIELDS[field.type];
       return Component ? (
         <Component
           key={field.name}
@@ -219,6 +240,79 @@ const Fields = ({
     })}
   </Stack>
 );
+
+const generateTemplate = (data: object): Field[] =>
+  Object.entries(data).map(([label, v]): Field => {
+    if (Array.isArray(v)) {
+      if (v.length > 0) {
+        // TODO depends of item type
+        console.log(typeof v[0]);
+      }
+      return {
+        label,
+        name: label,
+        description: "",
+        hidden: false,
+        type: "field_group_list",
+        fields: generateTemplate(v.reduce((a, v) => ({ ...a, ...v }), {})),
+        config: {},
+      };
+    } else if (typeof v === "object") {
+      return {
+        label,
+        name: label,
+        description: "",
+        hidden: false,
+        type: "field_group",
+        fields: generateTemplate(v),
+      };
+    } else if (typeof v === "boolean") {
+      return {
+        label,
+        name: label,
+        description: "",
+        default: false,
+        hidden: false,
+        type: "boolean",
+      };
+    } else if (typeof v === "number") {
+      return {
+        label,
+        name: label,
+        description: "",
+        hidden: false,
+        type: "number",
+        default: 0,
+        config: {
+          required: false,
+        },
+      };
+    } else if (typeof v === "string") {
+      if (isImage(v)) {
+        return {
+          label,
+          name: label,
+          description: "",
+          hidden: false,
+          type: "file",
+          default: "",
+          config: {},
+        };
+      } else {
+        return {
+          label,
+          name: label,
+          description: "",
+          hidden: false,
+          type: "text",
+          default: "",
+          config: {
+            required: false,
+          },
+        };
+      }
+    }
+  });
 
 export const Document = () => {
   const { "*": path } = useParams();
@@ -249,21 +343,20 @@ export const Document = () => {
                 .find(({ path }) => path === dir)?.templates?.[0]
           );
         }
+        const { meta, body } = await loadDocument(path);
         if (!template) {
-          // TODO template from content
           template = {
-            name: "generated",
+            name: "_",
+            label: "_",
             hide_body: !path.endsWith(".md"),
-            label: "Generated",
-            fields: [],
+            fields: generateTemplate(meta),
             pages: [path],
           };
         }
+        // TODO Merge templates ?
         setTemplate(template);
-        const { meta, body } = await loadDocument(path);
         setMeta(meta);
         setBody(body);
-        console.log(template);
       })();
     }
   }, [path, settings]);
@@ -297,12 +390,13 @@ export const Document = () => {
       >
         <Box
           sx={{
+            display: "flex",
+            flexDirection: "column",
             px: 2,
             py: 4,
-            display: "flex",
             flex: 2,
             overflow: "auto",
-            justifyContent: "center",
+            alignItems: "center",
           }}
         >
           <Fields fields={template.fields} value={meta} />

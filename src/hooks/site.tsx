@@ -65,9 +65,9 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         const tree: Tree = {};
         for (const leaf of leafs) {
           if (!leaf.folder) {
-            const parts = leaf.path.split("/");
+            const parts = leaf.path.replace(/^\/|\/$/g, "").split("/");
             let current: Tree = tree;
-            for (let i = 1; i < parts.length; i++) {
+            for (let i = 0; i < parts.length; i++) {
               const part = parts[i];
               if (!current[part]) {
                 if (i === parts.length - 1) {

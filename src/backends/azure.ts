@@ -53,8 +53,8 @@ export const useAzure = (site: Site): Backend => ({
     ).value
       ?.sort((a, b) => a.name.localeCompare(b.name))
       .map(({ name }) => name.replace("refs/heads/", "")) ?? [],
-  loadContent: (url: string) =>
-    fetch(url as string, {
+  loadContent: (url) =>
+    fetch(url, {
       headers: {
         Authorization: `Basic ${btoa(`:${site.token}`)}`,
       },

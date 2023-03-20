@@ -108,6 +108,28 @@ const FIELDS: {
       required={config?.required}
     />
   ),
+  color: ({ label, description, config, value }) => (
+    <Stack direction="row" spacing={1}>
+      <TextField
+        size="small"
+        label={label}
+        fullWidth
+        helperText={description}
+        value={value ?? ""}
+        required={config?.required}
+      />
+      <Box
+        sx={{
+          bgcolor: value,
+          width: "40px",
+          borderColor: "grey.400",
+          borderStyle: "solid",
+          borderWidth: "1px",
+          borderRadius: 1,
+        }}
+      ></Box>
+    </Stack>
+  ),
   number: ({ label, description, config, value }) => (
     <TextField
       type="number"
@@ -194,7 +216,7 @@ const FIELDS: {
           Add
         </Button>
         <Stack sx={{ width: "100%" }} spacing={2}>
-          {value.map((item, index) => (
+          {value?.map((item, index) => (
             <Group
               key={index}
               label={
@@ -448,7 +470,11 @@ export const Document = () => {
         }
         // TODO Merge templates ?
         setTemplate(template);
-        setMeta(meta);
+        setMeta(
+          template.fields.length === 1
+            ? { [template.fields[0].name]: meta }
+            : meta
+        );
         setBody(body);
       })();
     }

@@ -464,14 +464,14 @@ export const Document = () => {
             name: "_",
             label: "_",
             hide_body: !path.endsWith(".md"),
-            fields: generateTemplate(meta),
+            fields: generateTemplate(Array.isArray(meta) ? { _: meta } : meta),
             pages: [path],
           };
         }
         // TODO Merge templates ?
         setTemplate(template);
         setMeta(
-          template.fields.length === 1
+          Array.isArray(meta) && template.fields.length === 1
             ? { [template.fields[0].name]: meta }
             : meta
         );

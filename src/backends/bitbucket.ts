@@ -47,23 +47,12 @@ export const useBitbucket = (site: Site): Backend => {
         .filter(({ type }) => type === "branch")
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name),
-    loadContent: async (url) => {
-      const commit = (
-        await request(
-          `https://api.bitbucket.org/2.0/repositories/${site.project}/${site.repository}/refs/branches/${site.branch}`,
-          site.user,
-          site.token
-        )
-      ).target.hash;
-      return fetch(
-        `https://api.bitbucket.org/2.0/repositories/${site.project}/${site.repository}/src/${commit}/${url}`,
-        {
-          headers: {
-            Authorization: `Basic ${btoa(`${site.user}:${site.token}`)}`,
-          },
-        }
-      );
-    },
+    loadContent: async (url) =>
+      fetch(url, {
+        headers: {
+          Authorization: `Basic ${btoa(`${site.user}:${site.token}`)}`,
+        },
+      }),
     loadTree: async () => {
       const commit = (
         await request(
@@ -80,7 +69,7 @@ export const useBitbucket = (site: Site): Backend => {
         files.push(...values);
       } while (next);
       return files.map(({ path, type }) => ({
-        url: path,
+        url: `https://api.bitbucket.org/2.0/repositories/${site.project}/${site.repository}/src/${commit}/${path}`,
         path,
         author: "author",
         date: "",

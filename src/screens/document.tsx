@@ -50,9 +50,12 @@ const Group = ({
       sx={{
         minHeight: "38px",
         height: "38px",
+        width: "100%",
         ".MuiAccordionSummary-content": {
           display: "flex",
+          overflow: "hidden",
           alignItems: "center",
+          width: "100%",
         },
       }}
       expandIcon={<ExpandMoreIcon />}
@@ -63,7 +66,16 @@ const Group = ({
           sx={{ mr: 2, ml: 0, color: "text.secondary" }}
         />
       )}
-      <Typography sx={{ flex: 1 }}>{label}</Typography>
+      <Typography
+        sx={{
+          flex: 1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {label}
+      </Typography>
       {draggable && (
         <IconButton
           size="small"
@@ -227,12 +239,13 @@ const FIELDS: {
               borderRadius: 1,
             }}
             spacing={2}
+            draggable
           >
             <DragHandleOutlinedIcon
               fontSize="small"
               sx={{ color: "text.secondary", cursor: "pointer" }}
             />
-            <Box
+            <Typography
               sx={{
                 flex: 1,
                 whiteSpace: "nowrap",
@@ -241,7 +254,7 @@ const FIELDS: {
               }}
             >
               {v}
-            </Box>
+            </Typography>
             <IconButton
               size="small"
               onClick={(e) => {

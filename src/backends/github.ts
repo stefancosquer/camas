@@ -47,7 +47,25 @@ export const useGithub = (site: Site): Backend => {
       )
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(({ name }) => name),
-    loadContent: async () => void 0,
-    loadTree: async () => void 0,
+    loadContent: async (url) =>
+      fetch(url, {
+        headers: {
+          Authorization: `Basic ${btoa(`:${site.token}`)}`,
+        },
+      }),
+    loadTree: async () =>
+      (
+        await request(
+          `https://api.github.com/repos/${site.project.split("/")[1]}/${
+            site.repository
+          }/git/trees/${site.branch}?recursive=1`,
+          site.user,
+          site.token
+        )
+      ).tree?.map(({ path, type, url }) => ({
+        path,
+        url,
+        folder: type === "tree",
+      })) ?? [],
   };
 };

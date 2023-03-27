@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSite } from "../hooks/site";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isImage } from "../utils";
 import { Box } from "@mui/material";
 
@@ -8,39 +8,56 @@ export const Image = ({
   path,
   content = false,
 }: {
-  path: string;
+  path?: string;
   content?: boolean;
 }) => {
   const {
     loadMedia,
     settings: { upload_dir, public_path },
   } = useSite();
-  const [loaded, setLoaded] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [src, setSrc] = useState<string>();
+  const [realPath, setRealPath] = useState<string>();
   const ref = useRef();
-  const realPath = content
-    ? `/${upload_dir.replace(/^\/|\/$/g, "")}/${path
-        .replace(/^\/|\/$/g, "")
-        .replace(new RegExp(`^${public_path.replace(/^\/|\/$/g, "")}`), "")
-        .replace(/^\/|\/$/g, "")}`
-    : path;
-  const handle = (entries) => {
-    if (!loaded && entries[0].isIntersecting) {
-      setLoaded(true);
-      if (isImage(realPath)) {
-        loadMedia(realPath).then(setSrc);
-      }
+  useEffect(() => {
+    if (path) {
+      setRealPath(
+        content
+          ? `/${upload_dir.replace(/^\/|\/$/g, "")}/${path
+              .replace(/^\/|\/$/g, "")
+              .replace(
+                new RegExp(`^${public_path.replace(/^\/|\/$/g, "")}`),
+                ""
+              )
+              .replace(/^\/|\/$/g, "")}`
+          : path
+      );
     }
-  };
+  }, [path]);
+  const handle = useCallback(
+    (entries) => {
+      if (!visible && entries[0].isIntersecting) {
+        setVisible(true);
+      }
+    },
+    [visible]
+  );
   useEffect(() => {
     const observer = new IntersectionObserver(handle);
     if (ref.current) observer.observe(ref.current);
     return () => ref.current && observer.unobserve(ref.current);
-  }, [ref, loaded]);
+  }, [ref, visible]);
+  useEffect(() => {
+    if (visible && isImage(realPath)) {
+      loadMedia(realPath).then(setSrc);
+    }
+  }, [realPath, visible]);
   return (
     <Box
       ref={ref}
+      component="span"
       sx={{
+        display: "block",
         position: "relative",
         border: 1,
         borderColor: "grey.300",
@@ -49,7 +66,9 @@ export const Image = ({
       }}
     >
       <Box
+        component="span"
         sx={{
+          display: "block",
           position: "absolute",
           left: 0,
           top: 0,

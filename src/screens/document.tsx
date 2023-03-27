@@ -24,6 +24,8 @@ import { Image } from "../components/image";
 import { isImage } from "../utils";
 import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { Wysiwyg } from "../components/wysiwyg";
+import { Descendant } from "slate";
 
 const Group = ({
   label,
@@ -163,7 +165,7 @@ const FIELDS: {
         label={label}
         fullWidth
         helperText={description}
-        value={datetime.toISOString().slice(0, 16)}
+        value={value ? datetime.toISOString().slice(0, 16) : ""}
         required={config?.required}
       />
     );
@@ -434,7 +436,7 @@ export const Document = () => {
   const { loadDocument, settings } = useSite();
   const [template, setTemplate] = useState<Template>();
   const [meta, setMeta] = useState<Record<string, unknown>>();
-  const [body, setBody] = useState<string>();
+  const [body, setBody] = useState<Descendant[]>();
   useEffect(() => {
     if (path && settings) {
       (async () => {
@@ -534,18 +536,9 @@ export const Document = () => {
         {!template.hide_body && (
           <>
             <Divider orientation="vertical" flexItem />
-            <Box
-              sx={{
-                p: 2,
-                flex: 3,
-                overflow: "auto",
-                "pre, code": {
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                },
-              }}
-              dangerouslySetInnerHTML={{ __html: body }}
-            />
+            <Box sx={{ flex: 3, height: "100%", overflow: "hidden" }}>
+              <Wysiwyg value={body} />
+            </Box>
           </>
         )}
       </Stack>

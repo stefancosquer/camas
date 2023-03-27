@@ -6,15 +6,16 @@ import {
   useState,
 } from "react";
 import { useParams } from "react-router-dom";
-import { isImage, isYaml, slugify } from "../utils";
+import { isImage, isYaml, slugify, toMeta, toSlate } from "../utils";
 import { Leaf, Settings, Site, Template, Tree } from "../model";
 import { useBackend } from "../backends/backend";
 import { unified } from "unified";
-import parse from "remark-parse";
+import markdown from "remark-parse";
 import frontmatter from "remark-frontmatter";
-import { visit } from "unist-util-visit";
 import { load } from "js-yaml";
-import html from "remark-html";
+import { Descendant } from "slate";
+
+const MAX_EDGE = 1200;
 
 const SiteContext = createContext<{
   site?: Site;
@@ -24,7 +25,7 @@ const SiteContext = createContext<{
   loadMedia: (path: string) => Promise<string>;
   loadDocument: (
     path: string
-  ) => Promise<{ meta: Record<string, unknown>; body?: string }>;
+  ) => Promise<{ meta: Record<string, unknown>; body?: Descendant[] }>;
   sites: Site[];
   addSite: (site: Site) => void;
   removeSite: (index: number) => void;
@@ -127,8 +128,41 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         return await new Promise(async (resolve) => {
           const reader = new FileReader();
           reader.addEventListener("load", () => {
-            // TODO add resize
-            resolve(reader.result as T);
+            const image = new Image();
+            image.onload = async () => {
+              const { width, height } =
+                image.width > image.height
+                  ? {
+                      width: Math.min(image.width, MAX_EDGE),
+                      height:
+                        (Math.min(image.width, MAX_EDGE) / image.width) *
+                        image.height,
+                    }
+                  : {
+                      width:
+                        (Math.min(image.height, MAX_EDGE) / image.height) *
+                        image.width,
+                      height: Math.min(image.height, MAX_EDGE),
+                    };
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const context = canvas.getContext("2d");
+              context.imageSmoothingQuality = "high";
+              context.drawImage(
+                image,
+                0,
+                0,
+                image.width,
+                image.height,
+                0,
+                0,
+                width,
+                height
+              );
+              resolve(canvas.toDataURL("image/webp") as T);
+            };
+            image.src = reader.result.toString();
           });
           reader.readAsDataURL(await content.blob());
         });
@@ -149,17 +183,13 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
     // TODO attach template
     const content: string = await loadFile(path);
     if (path.endsWith(".md")) {
-      const { data, value } = await unified()
-        .use(parse)
+      const { data, result } = await unified()
+        .use(markdown)
+        .use(toSlate)
         .use(frontmatter, ["yaml"])
-        .use(() => (tree, file) => {
-          visit(tree, "yaml", (node): void => {
-            file.data = load(node.value) as Record<string, unknown>;
-          });
-        })
-        .use(html)
+        .use(toMeta)
         .process(content);
-      return { meta: data, body: value };
+      return { meta: data, body: result as Descendant[] };
     }
     return { meta: content as unknown as Record<string, unknown> };
   };

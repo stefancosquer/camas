@@ -1,11 +1,13 @@
 import * as React from "react";
-import { FC, useCallback, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Editable,
+  ReactEditor,
   RenderElementProps,
   RenderLeafProps,
   Slate,
   useSlate,
+  useSlateStatic,
   withReact,
 } from "slate-react";
 import { withHistory } from "slate-history";
@@ -15,17 +17,18 @@ import {
   Descendant,
   Editor,
   Element,
+  Text,
   Transforms,
 } from "slate";
 import {
   Box,
   Button,
+  ClickAwayListener,
   Divider,
   Link,
-  Menu,
-  Portal,
   Stack,
   SvgIcon,
+  TextField,
   ToggleButton,
   Tooltip,
   Typography,
@@ -149,7 +152,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
     </Typography>
   ),
   p: ({ attributes, children, element }) => (
-    <Typography variant="body1" sx={{ mb: 2 }} {...attributes}>
+    <Typography component="div" variant="body1" sx={{ mb: 2 }} {...attributes}>
       {children}
     </Typography>
   ),
@@ -164,12 +167,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
     </Typography>
   ),
   li: ({ attributes, children, element }) => (
-    <Typography
-      component="li"
-      variant="body1"
-      {...attributes}
-      sx={{ ".MuiTypography-root": { mb: 0 } }}
-    >
+    <Typography component="li" variant="body1" {...attributes} sx={{ mb: 0.5 }}>
       {children}
     </Typography>
   ),
@@ -213,22 +211,97 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
       {children}
     </Typography>
   ),
-  img: ({ attributes, element, children }) => (
-    <Box component="span" {...attributes} contentEditable={false}>
-      {children}
-      <Image path={element["url"]} content />
-    </Box>
-  ),
-  a: ({ attributes, children, element }) => (
-    <Link
-      href={element["url"]}
-      {...attributes}
-      onFocus={() => console.log("focused")}
-      onBlur={() => console.log("blurred")}
-    >
-      {children}
-    </Link>
-  ),
+  img: ({ attributes, element, children }) => {
+    const editor = useSlateStatic();
+    const onRemove = () => {
+      const at = ReactEditor.findPath(editor as ReactEditor, element);
+      Transforms.removeNodes(editor, { at });
+    };
+    return (
+      <Box sx={{ my: 2 }} {...attributes} contentEditable={false}>
+        {children}
+        <Image
+          path={element["url"]}
+          content
+          onChange={console.log}
+          onRemove={onRemove}
+        />
+      </Box>
+    );
+  },
+  a: ({ attributes, children, element }) => {
+    const editor = useSlate();
+    const [anchor, setAnchor] = useState<null | HTMLElement>(null);
+    const at = ReactEditor.findPath(editor as ReactEditor, element);
+    const togglePopper = (event) => {
+      setAnchor(event.currentTarget);
+    };
+    return (
+      <Tooltip
+        open={!!anchor}
+        disableFocusListener
+        disableHoverListener
+        disableTouchListener
+        arrow
+        PopperProps={{
+          sx: {
+            ".MuiTooltip-arrow": {
+              color: "white",
+            },
+            ".MuiTooltip-tooltip": {
+              bgcolor: "transparent",
+              boxShadow: 10,
+              p: 0,
+            },
+          },
+        }}
+        title={
+          <ClickAwayListener onClickAway={() => setAnchor(null)}>
+            <Stack
+              sx={{ p: 2, bgcolor: "white" }}
+              spacing={1}
+              contentEditable={false}
+            >
+              <TextField
+                size="small"
+                label="title"
+                defaultValue={element["title"] ?? ""}
+                onChange={(event) =>
+                  Transforms.setNodes(
+                    editor,
+                    {
+                      title: event.target.value,
+                    } as any,
+                    { at }
+                  )
+                }
+                fullWidth
+              />
+              <TextField
+                size="small"
+                label="url"
+                defaultValue={element["url"] ?? ""}
+                onChange={(event) =>
+                  Transforms.setNodes(
+                    editor,
+                    {
+                      url: event.target.value,
+                    } as any,
+                    { at }
+                  )
+                }
+                fullWidth
+              />
+            </Stack>
+          </ClickAwayListener>
+        }
+      >
+        <Link href={element["url"]} {...attributes} onClick={togglePopper}>
+          {children}
+        </Link>
+      </Tooltip>
+    );
+  },
   default: ({ attributes, children, element }) => (
     <div {...attributes}>
       Unknown ({element["type"]}) {children}
@@ -264,14 +337,14 @@ const MarkButton = ({
   );
 };
 
-const withEditor = (editor) => {
-  const { insertData, insertText, isInline, isVoid } = editor;
+const withEditor = (editor: ReactEditor) => {
+  const { insertData, insertText, isInline, isVoid, normalizeNode } = editor;
 
   editor.isInline = (element) =>
-    INLINES.includes(element.type) || isInline(element);
+    INLINES.includes(element["type"]) || isInline(element);
 
   editor.isVoid = (element) => {
-    return VOIDS.includes(element.type) || isVoid(element);
+    return VOIDS.includes(element["type"]) || isVoid(element);
   };
 
   editor.insertText = (text) => {
@@ -281,15 +354,90 @@ const withEditor = (editor) => {
   editor.insertData = (data) => {
     insertData(data);
   };
+
+  editor.normalizeNode = (entry) => {
+    const [node, path] = entry;
+    if (Element.isElement(node)) {
+      for (let i = 0; i < node.children.length; i++) {
+        if (i > 1) {
+          const prev = node.children[i - 2];
+          const text = node.children[i - 1];
+          const current = node.children[i];
+          if (
+            Element.isElement(prev) &&
+            editor.isInline(prev) &&
+            Text.isText(text) &&
+            text.text === "" &&
+            Element.isElement(current) &&
+            editor.isInline(current) &&
+            prev["type"] === current["type"]
+          ) {
+            Transforms.insertNodes(editor, current.children, {
+              at: path.concat(i - 2, prev.children.length),
+            });
+            Transforms.removeNodes(editor, { at: path.concat(i) });
+            return;
+          }
+        }
+      }
+    }
+    /*
+    if (Element.isElement(node)) {
+      const children = node.children
+        .filter(({ text }: any) => text !== "")
+        .reduce((a, current, i, array) => {
+          if (a.length === 0) {
+            a.push(current);
+          } else {
+            const last = a.pop();
+            if (editor.isInline(last) && editor.isInline(current)) {
+              console.log("LAST", last);
+              let same = true;
+              for (const prop in last) {
+                if (prop !== "children" && last[prop] !== current[prop]) {
+                  same = false;
+                }
+              }
+              if (same) {
+                a.push({
+                  ...last,
+                  children: [...last["children"], ...current["children"]],
+                });
+              } else {
+                a.push(last, current);
+              }
+            }
+          }
+          return a;
+        }, []);
+      console.log("normalize", node, node.children, children);
+      Transforms.setNodes(
+        editor,
+        {
+          children: [],
+        },
+        { at: path }
+      );
+      return;
+    }*/
+    normalizeNode(entry);
+  };
   return editor;
 };
 
-export const Wysiwyg = ({ value: initialValue }: { value: Descendant[] }) => {
+export const Wysiwyg = ({
+  value: initialValue,
+  onChange,
+}: {
+  value: Descendant[];
+  onChange: (value: string) => void;
+}) => {
   const editor = useMemo(
     () => withEditor(withReact(withHistory(createEditor()))),
     []
   );
   const [value, setValue] = useState(initialValue);
+  useEffect(() => onChange(value as any), [value]);
 
   const renderElement = useCallback((props: RenderElementProps) => {
     const Component = ELEMENTS[props.element["type"]] ?? ELEMENTS.default;
@@ -367,6 +515,12 @@ export const Wysiwyg = ({ value: initialValue }: { value: Descendant[] }) => {
             renderLeaf={renderLeaf}
             placeholder="Start writing..."
             style={{ padding: "16px", minHeight: "100%" }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && event.shiftKey) {
+                event.preventDefault();
+                editor.insertText("\n");
+              }
+            }}
           />
         </Box>
       </Stack>

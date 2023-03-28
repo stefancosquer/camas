@@ -31,6 +31,7 @@ import { darkTheme } from "../theme";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useBackend } from "../backends/backend";
+import { useModal } from "../hooks/modal";
 
 const DrawerItem = ({
   label,
@@ -67,6 +68,7 @@ export const App = () => {
   const { listBranches } = useBackend(site);
   const { slug } = useParams();
   const [branches, setBranches] = useState([]);
+  const { modal, setModal } = useModal();
   useEffect(() => {
     (async () => {
       setBranches(await listBranches());
@@ -199,6 +201,20 @@ export const App = () => {
       >
         <Outlet />
       </Box>
+      <Drawer
+        sx={{
+          "& .MuiDrawer-paper": {
+            width: "320px",
+            bgcolor: "background.default",
+          },
+        }}
+        ModalProps={{ onBackdropClick: () => setModal(null) }}
+        variant="temporary"
+        anchor="right"
+        open={!!modal}
+      >
+        {modal}
+      </Drawer>
     </Box>
   );
 };

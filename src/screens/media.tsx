@@ -3,6 +3,7 @@ import { useSite } from "../hooks/site";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { Image } from "../components/image";
+import { Upload } from "../components/upload";
 
 export const Media = () => {
   const { listMedia } = useSite();
@@ -23,14 +24,12 @@ export const Media = () => {
           p: 2,
           display: "flex",
           alignItems: "center",
-          height: "72px",
           justifyContent: "space-between",
+          height: "72px",
         }}
       >
         <Typography variant="h6">Media</Typography>
-        <Button onClick={() => {}} size="small" variant="outlined">
-          Upload
-        </Button>
+        <Upload />
       </Box>
       <Divider />
       <Box sx={{ flex: 1, overflow: "auto" }}>

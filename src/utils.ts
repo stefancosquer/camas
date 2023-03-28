@@ -48,27 +48,34 @@ const mdastToSlate = ({
   alt,
   lang,
   ordered,
+  depth,
   title,
   ...rest
 }) => {
-  console.log(type, children, value, rest, { type });
   switch (type) {
+    case "yaml":
+      return null;
     case "paragraph":
       return {
         type: "p",
-        children: children.flatMap(mdastToSlate),
+        children: children.flatMap(mdastToSlate).filter((v) => !!v),
+      };
+    case "heading":
+      return {
+        type: `h${depth}`,
+        children: children.flatMap(mdastToSlate).filter((v) => !!v),
       };
     case "list":
       return {
         type: ordered ? "ol" : "ul",
-        children: children.flatMap(mdastToSlate),
+        children: children.flatMap(mdastToSlate).filter((v) => !!v),
       };
     case "listItem":
       return {
         type: "li",
-        children: children.flatMap(({ children }) =>
-          children.flatMap(mdastToSlate)
-        ),
+        children: children
+          .flatMap(({ children }) => children.flatMap(mdastToSlate))
+          .filter((v) => !!v),
       };
     case "image":
       return { type: "img", url, alt, title, children: [{ text: "" }] };
@@ -77,10 +84,12 @@ const mdastToSlate = ({
         type: "a",
         url,
         title,
-        children: children.flatMap(mdastToSlate),
+        children: children.flatMap(mdastToSlate).filter((v) => !!v),
       };
     case "text":
       return { text: value };
+    case "break":
+      return { text: "\n" };
     case "code":
       return { type: "code", lang, children: [{ text: value }] };
     case "quote":
@@ -88,10 +97,15 @@ const mdastToSlate = ({
     case "inlineCode":
       return { code: true, text: value };
     case "strong":
-      return children.flatMap(({ value }) => ({ bold: true, text: value }));
+      return children
+        .flatMap(({ value }) => ({ bold: true, text: value }))
+        .filter((v) => !!v);
     case "emphasis":
-      return children.flatMap(({ value }) => ({ italic: true, text: value }));
+      return children
+        .flatMap(({ value }) => ({ italic: true, text: value }))
+        .filter((v) => !!v);
     default:
+      console.log("Unhandled md", type, children, value, rest, { type });
       return null;
   }
 };

@@ -294,13 +294,7 @@ const FIELDS: {
     </Group>
   ),
   file: ({ label, description, value }) => (
-    <>
-      <Image path={value} content />
-      <Button variant="contained" component="label">
-        Upload
-        <input hidden accept="image/*" multiple type="file" />
-      </Button>
-    </>
+    <Image path={value} content onChange={console.log} onRemove={console.log} />
   ),
   include: ({ name, template, value }) => {
     const { settings } = useSite();
@@ -537,7 +531,7 @@ export const Document = () => {
           <>
             <Divider orientation="vertical" flexItem />
             <Box sx={{ flex: 3, height: "100%", overflow: "hidden" }}>
-              <Wysiwyg value={body} />
+              <Wysiwyg value={body} onChange={console.log} />
             </Box>
           </>
         )}

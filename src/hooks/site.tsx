@@ -1,6 +1,8 @@
 import {
+  ComponentType,
   createContext,
   PropsWithChildren,
+  ReactElement,
   useContext,
   useEffect,
   useState,
@@ -30,6 +32,8 @@ const SiteContext = createContext<{
   addSite: (site: Site) => void;
   removeSite: (index: number) => void;
   setSite: (site: Site) => void;
+  modal?: ReactElement;
+  setModal: (modal: ReactElement) => void;
 }>({
   sites: [],
   listFiles: () => void 0,
@@ -39,11 +43,13 @@ const SiteContext = createContext<{
   addSite: () => void 0,
   removeSite: () => void 0,
   setSite: () => void 0,
+  setModal: () => void 0,
 });
 
 export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   const [site, setSite] = useState<Site>();
   const [settings, setSettings] = useState<Settings>();
+  const [modal, setModal] = useState<ReactElement>();
   const { loadContent, loadTree } = useBackend(site);
   const { slug } = useParams();
   const [sites, setSites] = useState<Site[]>(() => {
@@ -206,6 +212,8 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         setSite,
         addSite,
         removeSite,
+        modal,
+        setModal,
       }}
     >
       {children}

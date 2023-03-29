@@ -17,6 +17,7 @@ import {
   Descendant,
   Editor,
   Element,
+  Range,
   Text,
   Transforms,
 } from "slate";
@@ -317,10 +318,12 @@ const MarkButton = ({
   format,
   Icon,
   block,
+  inline,
 }: {
   format: string;
   Icon: typeof SvgIcon;
   block?: boolean;
+  inline?: boolean;
 }) => {
   const editor = useSlate();
   return (
@@ -330,11 +333,15 @@ const MarkButton = ({
       selected={
         block ? isBlockActive(editor, format) : isMarkActive(editor, format)
       }
-      sx={{ borderRadius: 1, border: 0 }}
+      sx={{ borderRadius: 1, border: 0, ":disabled": { border: 0 } }}
       onMouseDown={(event: any) => {
         event.preventDefault();
         block ? toggleBlock(editor, format) : toggleMark(editor, format);
       }}
+      disabled={
+        (!block || inline) &&
+        (!editor.selection || Range.isCollapsed(editor.selection))
+      }
     >
       <Icon />
     </ToggleButton>
@@ -453,7 +460,7 @@ export const Wysiwyg = ({
           <MarkButton format="italic" Icon={FormatItalicIcon} />
           <MarkButton format="code" Icon={CodeIcon} />
           <Divider flexItem orientation="vertical" />
-          <MarkButton format="a" Icon={LinkIcon} block />
+          <MarkButton format="a" Icon={LinkIcon} block inline />
           <MarkButton format="img" Icon={ImageOutlinedIcon} block />
           <Divider flexItem orientation="vertical" />
           <MarkButton format="quote" Icon={FormatQuoteOutlinedIcon} block />

@@ -1,13 +1,15 @@
 import * as React from "react";
-import { useSite } from "../hooks/site";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSite } from "../hooks/site";
 import { isImage } from "../utils";
 import {
   Box,
   Button,
   Divider,
+  FormControl,
   Grid,
   IconButton,
+  InputLabel,
   Stack,
   TextField,
   Typography,
@@ -64,11 +66,13 @@ const ToolBox = ({
 );
 
 export const Image = ({
+  label,
   path,
   content = false,
   onChange,
   onRemove,
 }: {
+  label?: string;
   path?: string;
   content?: boolean;
   onChange?: (title: string, alt: string, path: string) => void;
@@ -85,6 +89,7 @@ export const Image = ({
   const { setModal } = useModal();
   const ref = useRef();
   useEffect(() => {
+    setSrc(undefined);
     if (path) {
       setRealPath(
         content
@@ -135,7 +140,7 @@ export const Image = ({
     });
   };
   return (
-    <Box
+    <FormControl
       ref={ref}
       sx={{
         display: "block",
@@ -147,6 +152,25 @@ export const Image = ({
         pt: content ? "56.25%" : "100%",
       }}
     >
+      <InputLabel
+        sx={{
+          overflow: "visible",
+          ":before": {
+            content: "''",
+            display: "block",
+            bgcolor: "background.default",
+            position: "absolute",
+            left: "-5px",
+            right: "-5px",
+            height: "100%",
+            zIndex: "-1",
+            opacity: 0.5,
+          },
+        }}
+        shrink
+      >
+        {label}
+      </InputLabel>
       <Box
         sx={{
           display: "block",
@@ -203,6 +227,6 @@ export const Image = ({
           </IconButton>
         )}
       </Stack>
-    </Box>
+    </FormControl>
   );
 };

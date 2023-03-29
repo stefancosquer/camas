@@ -1,347 +1,22 @@
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
   Divider,
-  FormControlLabel,
   IconButton,
-  MenuItem,
   Stack,
-  Switch,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useSite } from "../hooks/site";
 import * as React from "react";
-import { FC, PropsWithChildren, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Directory, Field, Settings, Template, Value } from "../model";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import DragHandleOutlinedIcon from "@mui/icons-material/DragHandleOutlined";
-import { Image } from "../components/image";
+import { Directory, Field, Template } from "../model";
 import { fromSlate, isImage } from "../utils";
-import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Wysiwyg } from "../components/wysiwyg";
 import { Descendant } from "slate";
 import { toMarkdown } from "mdast-util-to-markdown";
-
-const Group = ({
-  label,
-  children,
-  draggable,
-}: PropsWithChildren<{ label: string; draggable?: boolean }>) => (
-  <Accordion
-    variant="outlined"
-    TransitionProps={{ unmountOnExit: true }}
-    disableGutters
-    sx={{
-      borderRadius: 1,
-      borderColor: "grey.400",
-      bgcolor: "background.default",
-      width: "100%",
-      ":before": { display: "none" },
-    }}
-    draggable={draggable}
-    onDrag={() => console.log("dragging")}
-    onDragStart={() => console.log("start dragging")}
-    onDragEnd={() => console.log("stop dragging")}
-  >
-    <AccordionSummary
-      sx={{
-        minHeight: "38px",
-        height: "38px",
-        width: "100%",
-        ".MuiAccordionSummary-content": {
-          display: "flex",
-          overflow: "hidden",
-          alignItems: "center",
-          width: "100%",
-        },
-      }}
-      expandIcon={<ExpandMoreIcon />}
-    >
-      {draggable && (
-        <DragHandleOutlinedIcon
-          fontSize="small"
-          sx={{ mr: 2, ml: 0, color: "text.secondary" }}
-        />
-      )}
-      <Typography
-        sx={{
-          flex: 1,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {label}
-      </Typography>
-      {draggable && (
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          <DeleteOutlineOutlined fontSize="small" />
-        </IconButton>
-      )}
-    </AccordionSummary>
-    <AccordionDetails>{children}</AccordionDetails>
-  </Accordion>
-);
-
-const FIELDS: {
-  [K in Field["type"]]?: FC<
-    Extract<Field, { type: K }> &
-      Extract<Value, { type: K }> & { settings: Settings }
-  >;
-} = {
-  text: ({ label, description, config, value }) => (
-    <TextField
-      size="small"
-      label={label}
-      fullWidth
-      helperText={description}
-      value={value ?? ""}
-      required={config?.required}
-    />
-  ),
-  color: ({ label, description, config, value }) => (
-    <Stack direction="row" spacing={1}>
-      <TextField
-        size="small"
-        label={label}
-        fullWidth
-        helperText={description}
-        value={value ?? ""}
-        required={config?.required}
-      />
-      <Box
-        sx={{
-          bgcolor: value,
-          width: "40px",
-          borderColor: "grey.400",
-          borderStyle: "solid",
-          borderWidth: "1px",
-          borderRadius: 1,
-        }}
-      ></Box>
-    </Stack>
-  ),
-  number: ({ label, description, config, value }) => (
-    <TextField
-      type="number"
-      size="small"
-      label={label}
-      fullWidth
-      helperText={description}
-      value={value ?? ""}
-      required={config?.required}
-    />
-  ),
-  textarea: ({ label, description, config, value }) => (
-    <TextField
-      size="small"
-      label={label}
-      fullWidth
-      multiline
-      rows={4}
-      helperText={description}
-      value={value ?? ""}
-      required={config?.required}
-    />
-  ),
-  datetime: ({ label, description, config, value }) => {
-    const datetime = new Date(value);
-    datetime.setMinutes(datetime.getMinutes() - datetime.getTimezoneOffset());
-    return (
-      <TextField
-        type="datetime-local"
-        size="small"
-        label={label}
-        fullWidth
-        helperText={description}
-        value={value ? datetime.toISOString().slice(0, 16) : ""}
-        required={config?.required}
-      />
-    );
-  },
-  select: ({
-    label,
-    config: {
-      required,
-      source: { type, section, file, path },
-      options = [],
-    },
-    value = "",
-    settings,
-  }) => {
-    if (type === "pages") {
-      options = settings.templates
-        .flatMap(({ pages = [] }) => pages)
-        .filter((item, index, array) => array.indexOf(item) === index)
-        .sort((a, b) => a.localeCompare(b));
-    }
-    return (
-      <TextField
-        select
-        fullWidth
-        label={label}
-        size="small"
-        value={value}
-        required={required}
-      >
-        {options?.map((option) => (
-          <MenuItem key={option} value={option}>
-            {option}
-          </MenuItem>
-        ))}
-      </TextField>
-    );
-  },
-  boolean: ({ label, value }) => (
-    <FormControlLabel control={<Switch checked={value} />} label={label} />
-  ),
-  field_group: ({ label, fields, value }) => (
-    <Group label={label}>
-      <Fields fields={fields} value={value} />
-    </Group>
-  ),
-  field_group_list: ({ label, description, fields, config, value }) => (
-    <Group label={label}>
-      <Stack alignItems="flex-start" spacing={2}>
-        <Button onClick={() => {}} size="small" variant="outlined">
-          Add
-        </Button>
-        <Stack sx={{ width: "100%" }} spacing={2}>
-          {value?.map((item, index) => (
-            <Group
-              key={index}
-              label={
-                (item[config?.labelField] ??
-                  item["title"] ??
-                  item["label"] ??
-                  item["name"]) as string
-              }
-              draggable
-            >
-              <Fields fields={fields} value={item} />
-            </Group>
-          ))}
-        </Stack>
-      </Stack>
-    </Group>
-  ),
-  list: ({ label, description, value }) => (
-    <Group label={label}>
-      <Stack sx={{ width: "100%" }} spacing={2}>
-        <Stack direction="row" spacing={1}>
-          <TextField
-            fullWidth
-            size="small"
-            sx={{ ".MuiInputBase-input": { py: 0.5 } }}
-          />
-          <Button onClick={() => {}} size="small" variant="outlined">
-            Add
-          </Button>
-        </Stack>
-        {value?.map((v) => (
-          <Stack
-            key={v}
-            direction="row"
-            alignItems="center"
-            sx={{
-              px: 2,
-              py: 1,
-              borderColor: "grey.400",
-              borderStyle: "solid",
-              borderWidth: "1px",
-              borderRadius: 1,
-            }}
-            spacing={2}
-            draggable
-          >
-            <DragHandleOutlinedIcon
-              fontSize="small"
-              sx={{ color: "text.secondary", cursor: "pointer" }}
-            />
-            <Typography
-              sx={{
-                flex: 1,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {v}
-            </Typography>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
-              <DeleteOutlineOutlined fontSize="small" />
-            </IconButton>
-          </Stack>
-        ))}
-      </Stack>
-    </Group>
-  ),
-  file: ({ label, description, value }) => (
-    <Image path={value} content onChange={console.log} onRemove={console.log} />
-  ),
-  include: ({ name, template, value }) => {
-    const { settings } = useSite();
-    return (
-      <Fields
-        fields={
-          settings.templates.find(({ name }) => name === template)?.fields ?? []
-        }
-        value={value}
-      />
-    );
-  },
-};
-
-const Fields = ({
-  fields,
-  value,
-}: {
-  fields: Field[];
-  value: Record<string, unknown>;
-}) => {
-  const { settings } = useSite();
-  return (
-    <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
-      {fields.map((field) => {
-        const Component: FC<any> = FIELDS[field.type];
-        return Component ? (
-          <Component
-            key={field.name}
-            value={
-              field.type === "include"
-                ? value
-                : (value?.[field.name] as Record<string, unknown>)
-            }
-            settings={settings}
-            {...field}
-          />
-        ) : (
-          <Box key={field.name}>
-            Undefined {field.name} {field.type}
-          </Box>
-        );
-      })}
-    </Stack>
-  );
-};
+import { Fields } from "../components/fields";
 
 const generateTemplate = (data: object): Field[] =>
   Object.entries(data).map(([label, v]): Field => {
@@ -477,6 +152,7 @@ export const Document = () => {
     }
   }, [path, settings]);
   if (!template || !meta) return null;
+  console.log(meta);
   return (
     <Box
       sx={{
@@ -526,7 +202,11 @@ export const Document = () => {
             alignItems: "center",
           }}
         >
-          <Fields fields={template.fields} value={meta} />
+          <Fields
+            fields={template.fields}
+            value={meta}
+            onChange={(value) => setMeta(value)}
+          />
         </Box>
         {!template.hide_body && (
           <>

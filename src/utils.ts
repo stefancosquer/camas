@@ -50,7 +50,6 @@ const mdastToSlate = ({
   ordered,
   depth,
   title,
-  ...rest
 }) => {
   switch (type) {
     case "yaml":
@@ -58,6 +57,11 @@ const mdastToSlate = ({
     case "paragraph":
       return {
         type: "p",
+        children: children.flatMap(mdastToSlate).filter((v) => !!v),
+      };
+    case "blockquote":
+      return {
+        type: "quote",
         children: children.flatMap(mdastToSlate).filter((v) => !!v),
       };
     case "heading":
@@ -92,8 +96,6 @@ const mdastToSlate = ({
       return { text: "\n" };
     case "code":
       return { type: "code", lang, children: [{ text: value }] };
-    case "quote":
-      return { type: "quote", lang, children: [{ text: value }] };
     case "inlineCode":
       return { code: true, text: value };
     case "strong":
@@ -105,7 +107,7 @@ const mdastToSlate = ({
         .flatMap(({ value }) => ({ italic: true, text: value }))
         .filter((v) => !!v);
     default:
-      console.log("Unhandled md", type, children, value, rest, { type });
+      console.warn("Unhandled md type", type);
       return null;
   }
 };

@@ -123,7 +123,11 @@ export const Image = ({
         <ToolBox
           media={media}
           onSelect={(path) => {
-            console.log(path);
+            const realPath = `/${public_path.replace(/^\/|\/$/g, "")}/${path
+              .replace(/^\/|\/$/g, "")
+              .replace(new RegExp(`^${upload_dir.replace(/^\/|\/$/g, "")}`), "")
+              .replace(/^\/|\/$/g, "")}`;
+            onChange("", "", realPath);
             setModal(null);
           }}
         />

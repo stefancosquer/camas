@@ -115,7 +115,7 @@ const toggleBlock = (editor, type) => {
 };
 
 const ELEMENTS: Record<string, FC<RenderElementProps>> = {
-  h1: ({ attributes, children, element }) => (
+  h1: ({ attributes, children }) => (
     <Typography
       variant="h1"
       sx={{ fontSize: "48px", mt: 3, mb: 2 }}
@@ -124,7 +124,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
       {children}
     </Typography>
   ),
-  h2: ({ attributes, children, element }) => (
+  h2: ({ attributes, children }) => (
     <Typography
       variant="h2"
       sx={{ fontSize: "36px", mt: 3, mb: 2 }}
@@ -133,7 +133,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
       {children}
     </Typography>
   ),
-  h3: ({ attributes, children, element }) => (
+  h3: ({ attributes, children }) => (
     <Typography
       variant="h3"
       sx={{ fontSize: "28px", mt: 3, mb: 2 }}
@@ -142,7 +142,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
       {children}
     </Typography>
   ),
-  h4: ({ attributes, children, element }) => (
+  h4: ({ attributes, children }) => (
     <Typography
       variant="h4"
       sx={{ fontSize: "18px", mt: 3, mb: 2 }}
@@ -151,27 +151,27 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
       {children}
     </Typography>
   ),
-  p: ({ attributes, children, element }) => (
+  p: ({ attributes, children }) => (
     <Typography component="div" variant="body1" sx={{ mb: 2 }} {...attributes}>
       {children}
     </Typography>
   ),
-  ol: ({ attributes, children, element }) => (
+  ol: ({ attributes, children }) => (
     <Typography component="ol" variant="body1" sx={{ my: 2 }} {...attributes}>
       {children}
     </Typography>
   ),
-  ul: ({ attributes, children, element }) => (
+  ul: ({ attributes, children }) => (
     <Typography component="ul" variant="body1" sx={{ my: 2 }} {...attributes}>
       {children}
     </Typography>
   ),
-  li: ({ attributes, children, element }) => (
+  li: ({ attributes, children }) => (
     <Typography component="li" variant="body1" {...attributes} sx={{ mb: 0.5 }}>
       {children}
     </Typography>
   ),
-  code: ({ attributes, children, element }) => (
+  code: ({ attributes, children }) => (
     <Typography
       className="language-javascript"
       component="code"
@@ -191,7 +191,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
       {children}
     </Typography>
   ),
-  quote: ({ attributes, children, element }) => (
+  quote: ({ attributes, children }) => (
     <Typography
       component="blockquote"
       sx={{
@@ -213,6 +213,18 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
   ),
   img: ({ attributes, element, children }) => {
     const editor = useSlateStatic();
+    const onChange = (title: string, alt: string, url: string) => {
+      const at = ReactEditor.findPath(editor as ReactEditor, element);
+      Transforms.setNodes(
+        editor,
+        {
+          title,
+          alt,
+          url,
+        } as any,
+        { at }
+      );
+    };
     const onRemove = () => {
       const at = ReactEditor.findPath(editor as ReactEditor, element);
       Transforms.removeNodes(editor, { at });
@@ -223,7 +235,7 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
         <Image
           path={element["url"]}
           content
-          onChange={console.log}
+          onChange={onChange}
           onRemove={onRemove}
         />
       </Box>
@@ -232,9 +244,18 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
   a: ({ attributes, children, element }) => {
     const editor = useSlate();
     const [anchor, setAnchor] = useState<null | HTMLElement>(null);
-    const at = ReactEditor.findPath(editor as ReactEditor, element);
     const togglePopper = (event) => {
       setAnchor(event.currentTarget);
+    };
+    const onChange = (field: string) => (event) => {
+      const at = ReactEditor.findPath(editor as ReactEditor, element);
+      Transforms.setNodes(
+        editor,
+        {
+          [field]: event.target.value,
+        } as any,
+        { at }
+      );
     };
     return (
       <Tooltip
@@ -266,30 +287,14 @@ const ELEMENTS: Record<string, FC<RenderElementProps>> = {
                 size="small"
                 label="title"
                 defaultValue={element["title"] ?? ""}
-                onChange={(event) =>
-                  Transforms.setNodes(
-                    editor,
-                    {
-                      title: event.target.value,
-                    } as any,
-                    { at }
-                  )
-                }
+                onChange={onChange("title")}
                 fullWidth
               />
               <TextField
                 size="small"
                 label="url"
                 defaultValue={element["url"] ?? ""}
-                onChange={(event) =>
-                  Transforms.setNodes(
-                    editor,
-                    {
-                      url: event.target.value,
-                    } as any,
-                    { at }
-                  )
-                }
+                onChange={onChange("url")}
                 fullWidth
               />
             </Stack>
@@ -381,45 +386,6 @@ const withEditor = (editor: ReactEditor) => {
         }
       }
     }
-    /*
-    if (Element.isElement(node)) {
-      const children = node.children
-        .filter(({ text }: any) => text !== "")
-        .reduce((a, current, i, array) => {
-          if (a.length === 0) {
-            a.push(current);
-          } else {
-            const last = a.pop();
-            if (editor.isInline(last) && editor.isInline(current)) {
-              console.log("LAST", last);
-              let same = true;
-              for (const prop in last) {
-                if (prop !== "children" && last[prop] !== current[prop]) {
-                  same = false;
-                }
-              }
-              if (same) {
-                a.push({
-                  ...last,
-                  children: [...last["children"], ...current["children"]],
-                });
-              } else {
-                a.push(last, current);
-              }
-            }
-          }
-          return a;
-        }, []);
-      console.log("normalize", node, node.children, children);
-      Transforms.setNodes(
-        editor,
-        {
-          children: [],
-        },
-        { at: path }
-      );
-      return;
-    }*/
     normalizeNode(entry);
   };
   return editor;

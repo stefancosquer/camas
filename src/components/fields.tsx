@@ -25,7 +25,12 @@ const Group = ({
   label,
   children,
   draggable,
-}: PropsWithChildren<{ label: string; draggable?: boolean }>) => (
+  onRemove,
+}: PropsWithChildren<{
+  label: string;
+  draggable?: boolean;
+  onRemove?: () => void;
+}>) => (
   <Accordion
     variant="outlined"
     TransitionProps={{ unmountOnExit: true }}
@@ -72,12 +77,13 @@ const Group = ({
       >
         {label}
       </Typography>
-      {draggable && (
+      {onRemove && (
         <IconButton
           size="small"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            onRemove();
           }}
         >
           <DeleteOutlineOutlined fontSize="small" />
@@ -249,6 +255,10 @@ const FIELDS: {
                   item["name"]) as string
               }
               draggable
+              onRemove={() => {
+                value.splice(index, 1);
+                onChange(value);
+              }}
             >
               <Fields
                 fields={fields}

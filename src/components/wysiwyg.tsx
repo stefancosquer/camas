@@ -37,7 +37,6 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FormatSizeIcon from "@mui/icons-material/FormatSize";
 import FormatBoldIcon from "@mui/icons-material/FormatBold";
 import FormatItalicIcon from "@mui/icons-material/FormatItalic";
-import FormatStrikethroughIcon from "@mui/icons-material/FormatStrikethrough";
 import CodeIcon from "@mui/icons-material/Code";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
@@ -418,7 +417,6 @@ export const Wysiwyg = ({
         sx={{
           fontWeight: leaf["bold"] ? "bold" : "normal",
           fontStyle: leaf["italic"] ? "italic" : "normal",
-          textDecoration: leaf["strikeThrough"] ? "line-through" : "none",
           fontFamily: leaf["code"] ? '"Roboto Mono", monospace' : "inherit",
           bgcolor: leaf["code"] ? "grey.100" : "transparent",
           py: leaf["code"] ? 0.05 : 0,
@@ -453,7 +451,6 @@ export const Wysiwyg = ({
           <Divider flexItem orientation="vertical" />
           <MarkButton format="bold" Icon={FormatBoldIcon} />
           <MarkButton format="italic" Icon={FormatItalicIcon} />
-          <MarkButton format="strikeThrough" Icon={FormatStrikethroughIcon} />
           <MarkButton format="code" Icon={CodeIcon} />
           <Divider flexItem orientation="vertical" />
           <MarkButton format="a" Icon={LinkIcon} block />

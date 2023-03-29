@@ -21,11 +21,12 @@ import { Directory, Field, Settings, Template, Value } from "../model";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DragHandleOutlinedIcon from "@mui/icons-material/DragHandleOutlined";
 import { Image } from "../components/image";
-import { isImage } from "../utils";
+import { fromSlate, isImage } from "../utils";
 import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Wysiwyg } from "../components/wysiwyg";
 import { Descendant } from "slate";
+import { toMarkdown } from "mdast-util-to-markdown";
 
 const Group = ({
   label,
@@ -531,7 +532,24 @@ export const Document = () => {
           <>
             <Divider orientation="vertical" flexItem />
             <Box sx={{ flex: 3, height: "100%", overflow: "hidden" }}>
-              <Wysiwyg value={body} onChange={console.log} />
+              <Wysiwyg
+                value={body}
+                onChange={(value) => {
+                  console.log("SLATE", value);
+                  console.log("AST", fromSlate(value as unknown as any[]));
+                  try {
+                    console.log(
+                      "MD",
+                      toMarkdown({
+                        type: "root",
+                        children: fromSlate(value as unknown as any[]),
+                      })
+                    );
+                  } catch (e) {
+                    console.log("MD error");
+                  }
+                }}
+              />
             </Box>
           </>
         )}

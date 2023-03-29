@@ -64,7 +64,7 @@ const DrawerItem = ({
 };
 
 export const App = () => {
-  const { site, settings } = useSite();
+  const { site, settings, setBranch } = useSite();
   const { listBranches } = useBackend(site);
   const { slug } = useParams();
   const [branches, setBranches] = useState([]);
@@ -129,6 +129,7 @@ export const App = () => {
               size="small"
               variant="outlined"
               value={branches.length === 0 ? "" : site.branch}
+              onChange={(event) => setBranch(event.target.value)}
               select
             >
               {branches.map((branch) => (

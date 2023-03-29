@@ -1,5 +1,4 @@
 import {
-  ComponentType,
   createContext,
   PropsWithChildren,
   ReactElement,
@@ -34,6 +33,7 @@ const SiteContext = createContext<{
   setSite: (site: Site) => void;
   modal?: ReactElement;
   setModal: (modal: ReactElement) => void;
+  setBranch: (branch: string) => void;
 }>({
   sites: [],
   listFiles: () => void 0,
@@ -44,7 +44,21 @@ const SiteContext = createContext<{
   removeSite: () => void 0,
   setSite: () => void 0,
   setModal: () => void 0,
+  setBranch: () => void 0,
 });
+
+const DEFAULT: Settings = {
+  admin_path: "",
+  auto_deploy: false,
+  file_template: "",
+  new_page_extension: "md",
+  public_path: "/media",
+  sections: [],
+  templates: [],
+  upload_dir: "",
+  version: "",
+  webhook_url: null,
+};
 
 export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   const [site, setSite] = useState<Site>();
@@ -94,7 +108,8 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     (async () => {
       if (tree) {
-        const settings = await loadFile<Settings>("/.forestry/settings.yml");
+        const settings: Settings =
+          (await loadFile("/.forestry/settings.yml")) ?? DEFAULT;
         settings.templates = await Promise.all(
           (
             await listFiles("/.forestry/front_matter/templates")
@@ -199,6 +214,9 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
     }
     return { meta: content as unknown as Record<string, unknown> };
   };
+  const setBranch = (branch: string) => {
+    setSite({ ...site, branch });
+  };
   return (
     <SiteContext.Provider
       value={{
@@ -214,6 +232,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         removeSite,
         modal,
         setModal,
+        setBranch,
       }}
     >
       {children}

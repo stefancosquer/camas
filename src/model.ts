@@ -26,7 +26,7 @@ export type Settings = {
   admin_path: string;
   upload_dir: string;
   file_template: string;
-  new_page_extension: "md|html";
+  new_page_extension: "md" | "html";
   auto_deploy: boolean;
   public_path: "/media";
   webhook_url: null;

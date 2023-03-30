@@ -1,14 +1,22 @@
-import { Button } from "@mui/material";
 import * as React from "react";
+import { LoadingButton } from "@mui/lab";
+import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 
-export const Upload = () => {
+export const Upload = ({ saving = false }: { saving?: boolean }) => {
   const onChange = (event) => {
     console.log(event.target.files);
   };
   return (
-    <Button component="label" size="small" variant="outlined">
+    <LoadingButton
+      component="label"
+      loading={saving}
+      loadingPosition="start"
+      startIcon={<DriveFolderUploadOutlinedIcon />}
+      size="small"
+      variant="outlined"
+    >
       Upload
       <input hidden accept="image/*" multiple type="file" onChange={onChange} />
-    </Button>
+    </LoadingButton>
   );
 };

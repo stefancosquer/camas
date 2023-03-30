@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  Divider,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { useSite } from "../hooks/site";
 import * as React from "react";
 import { useEffect, useState } from "react";
@@ -16,6 +9,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Wysiwyg } from "../components/wysiwyg";
 import { Descendant } from "slate";
 import { Fields } from "../components/fields";
+import { LoadingButton } from "@mui/lab";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 
 const generateTemplate = (data: object): Field[] =>
   Object.entries(data).map(([label, v]): Field => {
@@ -104,6 +99,8 @@ export const Document = () => {
   const { "*": path } = useParams();
   const { loadDocument, saveDocument, settings } = useSite();
   const [template, setTemplate] = useState<Template>();
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [meta, setMeta] = useState<Record<string, unknown>>();
   const [body, setBody] = useState<Descendant[]>();
   useEffect(() => {
@@ -147,11 +144,16 @@ export const Document = () => {
             : meta
         );
         setBody(body);
+        setDirty(false);
+        setSaving(false);
       })();
     }
   }, [path, settings]);
   const onSave = async () => {
+    setSaving(true);
     await saveDocument(path, meta, body);
+    setSaving(false);
+    setDirty(false);
   };
   if (!template || !meta) return null;
   console.log(meta, body);
@@ -175,9 +177,17 @@ export const Document = () => {
         <Typography variant="h6" sx={{ flex: 1 }}>
           Document
         </Typography>
-        <Button onClick={onSave} size="small" variant="outlined">
+        <LoadingButton
+          loading={saving}
+          loadingPosition="start"
+          startIcon={<SaveOutlinedIcon />}
+          onClick={onSave}
+          size="small"
+          variant="outlined"
+          disabled={!dirty}
+        >
           Save
-        </Button>
+        </LoadingButton>
         <IconButton
           edge="end"
           onClick={(event) => {
@@ -207,14 +217,23 @@ export const Document = () => {
           <Fields
             fields={template.fields}
             value={meta}
-            onChange={(value) => setMeta(value)}
+            onChange={(value) => {
+              setDirty(true);
+              setMeta(value);
+            }}
           />
         </Box>
         {!template.hide_body && (
           <>
             <Divider orientation="vertical" flexItem />
             <Box sx={{ flex: 3, height: "100%", overflow: "hidden" }}>
-              <Wysiwyg value={body} onChange={setBody} />
+              <Wysiwyg
+                value={body}
+                onChange={(value) => {
+                  setDirty(true);
+                  setBody(value);
+                }}
+              />
             </Box>
           </>
         )}

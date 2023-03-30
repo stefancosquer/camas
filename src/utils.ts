@@ -6,13 +6,18 @@ import { Content } from "mdast-util-to-markdown/lib/types";
 export const request = async (
   url: string,
   user: string,
-  token: string
+  token: string,
+  method: "get" | "post" = "get",
+  body?: string
 ): Promise<any> =>
   (
     await fetch(url, {
       headers: {
         Authorization: `Basic ${btoa(`${user}:${token}`)}`,
+        ...(method === "post" && { "Content-Type": "application/json" }),
       },
+      method,
+      ...(body && { body }),
     })
   ).json();
 
@@ -24,8 +29,12 @@ export const slugify = (str) =>
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+export const isMarkdown = (path: string) => path && path.endsWith(".md");
+
 export const isYaml = (path: string) =>
   path && (path.endsWith(".yml") || path.endsWith(".yaml"));
+
+export const isJson = (path: string) => path && path.endsWith(".json");
 
 export const isImage = (path: string) =>
   path &&

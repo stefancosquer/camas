@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useMemo, useState } from "react";
 import {
   Editable,
   ReactEditor,
@@ -398,19 +398,16 @@ const withEditor = (editor: ReactEditor) => {
 };
 
 export const Wysiwyg = ({
-  value: initialValue,
+  value,
   onChange,
 }: {
   value: Descendant[];
-  onChange: (value: string) => void;
+  onChange: (value: Descendant[]) => void;
 }) => {
   const editor = useMemo(
     () => withEditor(withReact(withHistory(createEditor()))),
     []
   );
-  const [value, setValue] = useState(initialValue);
-  useEffect(() => onChange(value as any), [value]);
-
   const renderElement = useCallback((props: RenderElementProps) => {
     const Component = ELEMENTS[props.element["type"]] ?? ELEMENTS.default;
     return <Component {...props} />;
@@ -438,13 +435,7 @@ export const Wysiwyg = ({
   );
 
   return (
-    <Slate
-      editor={editor}
-      value={value}
-      onChange={(value: any) => {
-        setValue(value);
-      }}
-    >
+    <Slate editor={editor} value={value} onChange={onChange}>
       <Stack sx={{ height: "100%" }}>
         <Stack sx={{ p: 0.5 }} direction="row" spacing={0.25}>
           <Button

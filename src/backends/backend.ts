@@ -13,19 +13,25 @@ export type Backend = {
   listBranches: () => Promise<string[]>;
   loadTree: () => Promise<Leaf[]>;
   loadContent: (url: string) => Promise<Response>;
+  saveContent: (
+    path: string,
+    content: string,
+    create: boolean
+  ) => Promise<void>;
+  deleteContent: (path: string) => Promise<void>;
 };
 
-const useDummy = (): Backend => {
-  return {
-    needOrg: false,
-    needUser: false,
-    listProjects: async () => [],
-    listRepositories: async () => [],
-    listBranches: async () => [],
-    loadContent: async () => void 0,
-    loadTree: async () => void 0,
-  };
-};
+const useDummy = (): Backend => ({
+  needOrg: false,
+  needUser: false,
+  listProjects: async () => [],
+  listRepositories: async () => [],
+  listBranches: async () => [],
+  loadTree: async () => void 0,
+  loadContent: async () => void 0,
+  saveContent: async () => void 0,
+  deleteContent: async () => void 0,
+});
 
 export const useBackend = (site: Site): Backend => {
   const current = site;

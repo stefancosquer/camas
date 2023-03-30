@@ -7,14 +7,24 @@ import {
   useState,
 } from "react";
 import { useParams } from "react-router-dom";
-import { isImage, isYaml, slugify, toMeta, toSlate } from "../utils";
+import {
+  fromSlate,
+  isImage,
+  isJson,
+  isMarkdown,
+  isYaml,
+  slugify,
+  toMeta,
+  toSlate,
+} from "../utils";
 import { Leaf, Settings, Site, Template, Tree } from "../model";
 import { useBackend } from "../backends/backend";
 import { unified } from "unified";
 import markdown from "remark-parse";
 import frontmatter from "remark-frontmatter";
-import { load } from "js-yaml";
+import { dump, load } from "js-yaml";
 import { Descendant } from "slate";
+import { toMarkdown } from "mdast-util-to-markdown";
 
 const MAX_EDGE = 1200;
 
@@ -27,6 +37,11 @@ const SiteContext = createContext<{
   loadDocument: (
     path: string
   ) => Promise<{ meta: Record<string, unknown>; body?: Descendant[] }>;
+  saveDocument: (
+    path: string,
+    meta: Record<string, unknown>,
+    body?: Descendant[]
+  ) => Promise<void>;
   sites: Site[];
   addSite: (site: Site) => void;
   removeSite: (index: number) => void;
@@ -40,6 +55,7 @@ const SiteContext = createContext<{
   listMedia: () => void 0,
   loadMedia: () => void 0,
   loadDocument: () => void 0,
+  saveDocument: () => void 0,
   addSite: () => void 0,
   removeSite: () => void 0,
   setSite: () => void 0,
@@ -64,7 +80,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   const [site, setSite] = useState<Site>();
   const [settings, setSettings] = useState<Settings>();
   const [modal, setModal] = useState<ReactElement>();
-  const { loadContent, loadTree } = useBackend(site);
+  const { loadContent, saveContent, loadTree } = useBackend(site);
   const { slug } = useParams();
   const [sites, setSites] = useState<Site[]>(() => {
     const value = localStorage.getItem("sites");
@@ -141,7 +157,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
       .reduce((a, v) => (a ? a[v] : undefined), tree)?.url;
     if (url) {
       const content = await loadContent(url as string);
-      if (path.endsWith(".json")) {
+      if (isJson(path)) {
         return JSON.parse(await content.text());
       } else if (isYaml(path)) {
         return load(await content.text()) as T;
@@ -203,7 +219,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   const loadDocument = async (path: string) => {
     // TODO attach template
     const content: string = await loadFile(path);
-    if (path.endsWith(".md")) {
+    if (isMarkdown(path)) {
       const { data, result } = await unified()
         .use(markdown)
         .use(toSlate)
@@ -213,6 +229,37 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
       return { meta: data, body: result as Descendant[] };
     }
     return { meta: content as unknown as Record<string, unknown> };
+  };
+  const saveDocument = async (
+    path: string,
+    meta: Record<string, unknown>,
+    body?: Descendant[]
+  ) => {
+    let content;
+    if (isMarkdown(path)) {
+      // TODO handle markdown without metadata
+      content =
+        "---\n" +
+        dump(meta, { noRefs: true }) +
+        "\n---\n" +
+        toMarkdown({
+          type: "root",
+          children: fromSlate(body as unknown as any[]),
+        });
+    } else if (isYaml(path)) {
+      content = dump(meta, { noRefs: true });
+    } else if (isJson(path)) {
+      content = JSON.stringify(meta, null, 2);
+    } else {
+      throw `Unhandled document type ${path}`;
+    }
+    if (content) {
+      const encoded = encodeURIComponent(content).replace(
+        /%([0-9A-F]{2})/g,
+        (match, p1) => String.fromCharCode(parseInt(p1, 16))
+      );
+      await saveContent(path, btoa(encoded), false);
+    }
   };
   const setBranch = (branch: string) => {
     setSite({ ...site, branch });
@@ -226,6 +273,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         listMedia,
         loadMedia,
         loadDocument,
+        saveDocument,
         sites,
         setSite,
         addSite,

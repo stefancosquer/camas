@@ -53,6 +53,8 @@ export const useBitbucket = (site: Site): Backend => {
           Authorization: `Basic ${btoa(`${site.user}:${site.token}`)}`,
         },
       }),
+    saveContent: async () => void 0,
+    deleteContent: async () => void 0,
     loadTree: async () => {
       const commit = (
         await request(

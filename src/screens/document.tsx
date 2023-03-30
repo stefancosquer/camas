@@ -11,11 +11,10 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Directory, Field, Template } from "../model";
-import { fromSlate, isImage } from "../utils";
+import { isImage } from "../utils";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Wysiwyg } from "../components/wysiwyg";
 import { Descendant } from "slate";
-import { toMarkdown } from "mdast-util-to-markdown";
 import { Fields } from "../components/fields";
 
 const generateTemplate = (data: object): Field[] =>
@@ -103,7 +102,7 @@ const generateTemplate = (data: object): Field[] =>
 
 export const Document = () => {
   const { "*": path } = useParams();
-  const { loadDocument, settings } = useSite();
+  const { loadDocument, saveDocument, settings } = useSite();
   const [template, setTemplate] = useState<Template>();
   const [meta, setMeta] = useState<Record<string, unknown>>();
   const [body, setBody] = useState<Descendant[]>();
@@ -151,8 +150,11 @@ export const Document = () => {
       })();
     }
   }, [path, settings]);
+  const onSave = async () => {
+    await saveDocument(path, meta, body);
+  };
   if (!template || !meta) return null;
-  console.log(meta);
+  console.log(meta, body);
   return (
     <Box
       sx={{
@@ -173,7 +175,7 @@ export const Document = () => {
         <Typography variant="h6" sx={{ flex: 1 }}>
           Document
         </Typography>
-        <Button onClick={() => {}} size="small" variant="outlined">
+        <Button onClick={onSave} size="small" variant="outlined">
           Save
         </Button>
         <IconButton
@@ -212,24 +214,7 @@ export const Document = () => {
           <>
             <Divider orientation="vertical" flexItem />
             <Box sx={{ flex: 3, height: "100%", overflow: "hidden" }}>
-              <Wysiwyg
-                value={body}
-                onChange={(value) => {
-                  console.log("SLATE", value);
-                  console.log("AST", fromSlate(value as unknown as any[]));
-                  try {
-                    console.log(
-                      "MD",
-                      toMarkdown({
-                        type: "root",
-                        children: fromSlate(value as unknown as any[]),
-                      })
-                    );
-                  } catch (e) {
-                    console.log("MD error");
-                  }
-                }}
-              />
+              <Wysiwyg value={body} onChange={setBody} />
             </Box>
           </>
         )}

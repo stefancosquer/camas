@@ -53,6 +53,8 @@ export const useGithub = (site: Site): Backend => {
           Authorization: `Basic ${btoa(`:${site.token}`)}`,
         },
       }),
+    saveContent: async () => void 0,
+    deleteContent: async () => void 0,
     loadTree: async () =>
       (
         await request(

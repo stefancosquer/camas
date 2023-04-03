@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FC, PropsWithChildren, useState } from "react";
+import { FC, PropsWithChildren, useCallback, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -33,82 +33,77 @@ const Group = ({
   sortable?: boolean;
   dragged?: boolean;
   onRemove?: () => void;
-}>) => {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <Accordion
-      variant="outlined"
-      TransitionProps={{ unmountOnExit: true }}
-      disableGutters
+}>) => (
+  <Accordion
+    variant="outlined"
+    TransitionProps={{ unmountOnExit: true }}
+    disableGutters
+    sx={{
+      borderRadius: 1,
+      borderColor: dragged ? "background.paper" : "grey.400",
+      bgcolor: dragged ? "background.paper" : "background.default",
+      width: "100%",
+      ":before": { display: "none" },
+      transition: "none",
+    }}
+  >
+    <AccordionSummary
       sx={{
-        borderRadius: 1,
-        borderColor: dragged ? "background.paper" : "grey.400",
-        bgcolor: dragged ? "background.paper" : "background.default",
+        minHeight: "38px",
+        height: "38px",
         width: "100%",
-        ":before": { display: "none" },
-        transition: "none",
-      }}
-      expanded={expanded}
-      onChange={(_, expanded) => setExpanded(expanded)}
-    >
-      <AccordionSummary
-        sx={{
-          minHeight: "38px",
-          height: "38px",
+        ".MuiAccordionSummary-content": {
+          display: "flex",
+          overflow: "hidden",
+          alignItems: "center",
           width: "100%",
-          ".MuiAccordionSummary-content": {
-            display: "flex",
-            overflow: "hidden",
-            alignItems: "center",
-            width: "100%",
-          },
-          opacity: dragged ? 0 : 1,
-        }}
-        expandIcon={<ExpandMoreIcon />}
-      >
-        {sortable && (
-          <DragHandleOutlinedIcon
-            fontSize="small"
-            sx={{
-              mr: 2,
-              ml: 0,
-              color: "text.secondary",
-            }}
-          />
-        )}
-        <Typography
+        },
+        opacity: dragged ? 0 : 1,
+      }}
+      expandIcon={<ExpandMoreIcon />}
+    >
+      {sortable && (
+        <DragHandleOutlinedIcon
+          fontSize="small"
           sx={{
-            flex: 1,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            mr: 2,
+            ml: 0,
+            color: "text.secondary",
+          }}
+        />
+      )}
+      <Typography
+        sx={{
+          flex: 1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {label}
+      </Typography>
+      {onRemove && (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
           }}
         >
-          {label}
-        </Typography>
-        {onRemove && (
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onRemove();
-            }}
-          >
-            <DeleteOutlineOutlined fontSize="small" />
-          </IconButton>
-        )}
-      </AccordionSummary>
-      <AccordionDetails
-        sx={{
-          opacity: dragged ? 0 : 1,
-        }}
-      >
-        {children}
-      </AccordionDetails>
-    </Accordion>
-  );
-};
+          <DeleteOutlineOutlined fontSize="small" />
+        </IconButton>
+      )}
+    </AccordionSummary>
+    <AccordionDetails
+      sx={{
+        opacity: dragged ? 0 : 1,
+      }}
+    >
+      {children}
+    </AccordionDetails>
+  </Accordion>
+);
 
 const FIELDS: {
   [K in Field["type"]]?: FC<
@@ -251,6 +246,24 @@ const FIELDS: {
     value,
     onChange,
   }) => {
+    const renderItem = useCallback(
+      ({ value, dragged, onChange, onRemove }) => (
+        <Group
+          dragged={dragged}
+          onRemove={onRemove}
+          label={
+            (value[config?.labelField] ??
+              value["title"] ??
+              value["label"] ??
+              value["name"]) as string
+          }
+          sortable
+        >
+          <Fields fields={fields} value={value} onChange={onChange} />
+        </Group>
+      ),
+      [fields]
+    );
     return (
       <Group label={label}>
         <Stack alignItems="flex-start" spacing={2}>
@@ -261,31 +274,59 @@ const FIELDS: {
           >
             Add
           </Button>
-          <Sortable
-            values={value}
-            onChange={onChange}
-            Component={({ value, dragged, onChange, onRemove }) => (
-              <Group
-                dragged={dragged}
-                onRemove={onRemove}
-                label={
-                  (value[config?.labelField] ??
-                    value["title"] ??
-                    value["label"] ??
-                    value["name"]) as string
-                }
-                sortable
-              >
-                <Fields fields={fields} value={value} onChange={onChange} />
-              </Group>
-            )}
-          ></Sortable>
+          <Sortable values={value} onChange={onChange} Component={renderItem} />
         </Stack>
       </Group>
     );
   },
   list: ({ label, description, value, onChange }) => {
     const [newValue, setNewValue] = useState("");
+    const renderItem = useCallback(
+      ({ value, dragged, onRemove }) => (
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{
+            px: 2,
+            py: 1,
+            borderColor: dragged ? "background.paper" : "grey.400",
+            bgcolor: dragged ? "background.paper" : "background.default",
+            borderStyle: "solid",
+            borderWidth: "1px",
+            borderRadius: 1,
+          }}
+          spacing={2}
+        >
+          <DragHandleOutlinedIcon
+            fontSize="small"
+            sx={{
+              color: "text.secondary",
+              cursor: "pointer",
+              opacity: dragged ? 0 : 1,
+            }}
+          />
+          <Typography
+            sx={{
+              flex: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              opacity: dragged ? 0 : 1,
+            }}
+          >
+            {value}
+          </Typography>
+          <IconButton
+            sx={{ opacity: dragged ? 0 : 1 }}
+            size="small"
+            onClick={onRemove}
+          >
+            <DeleteOutlineOutlined fontSize="small" />
+          </IconButton>
+        </Stack>
+      ),
+      []
+    );
     return (
       <Group label={label}>
         <Stack sx={{ width: "100%" }} spacing={2}>
@@ -309,53 +350,7 @@ const FIELDS: {
               Add
             </Button>
           </Stack>
-          <Sortable
-            values={value}
-            onChange={onChange}
-            Component={({ value, dragged, onRemove }) => (
-              <Stack
-                direction="row"
-                alignItems="center"
-                sx={{
-                  px: 2,
-                  py: 1,
-                  borderColor: dragged ? "background.paper" : "grey.400",
-                  bgcolor: dragged ? "background.paper" : "background.default",
-                  borderStyle: "solid",
-                  borderWidth: "1px",
-                  borderRadius: 1,
-                }}
-                spacing={2}
-              >
-                <DragHandleOutlinedIcon
-                  fontSize="small"
-                  sx={{
-                    color: "text.secondary",
-                    cursor: "pointer",
-                    opacity: dragged ? 0 : 1,
-                  }}
-                />
-                <Typography
-                  sx={{
-                    flex: 1,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    opacity: dragged ? 0 : 1,
-                  }}
-                >
-                  {value}
-                </Typography>
-                <IconButton
-                  sx={{ opacity: dragged ? 0 : 1 }}
-                  size="small"
-                  onClick={onRemove}
-                >
-                  <DeleteOutlineOutlined fontSize="small" />
-                </IconButton>
-              </Stack>
-            )}
-          />
+          <Sortable values={value} onChange={onChange} Component={renderItem} />
         </Stack>
       </Group>
     );

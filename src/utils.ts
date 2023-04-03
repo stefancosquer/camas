@@ -111,11 +111,11 @@ const mdastToSlate = ({
       return { code: true, text: value };
     case "strong":
       return children
-        .flatMap(({ value }) => ({ bold: true, text: value }))
+        .flatMap(({ value }) => (value ? { bold: true, text: value } : null))
         .filter((v) => !!v);
     case "emphasis":
       return children
-        .flatMap(({ value }) => ({ italic: true, text: value }))
+        .flatMap(({ value }) => (value ? { italic: true, text: value } : null))
         .filter((v) => !!v);
     default:
       console.log("Unhandled md type", type);
@@ -134,18 +134,29 @@ const slateToMdast = ({
   code,
   bold,
   italic,
-}): Content => {
+}: {
+  type?: string;
+  text?: string;
+  url?: string;
+  lang?: string;
+  title?: string;
+  alt?: string;
+  children?: [];
+  code?: boolean;
+  bold?: boolean;
+  italic?: boolean;
+}) => {
   switch (type) {
     case "p":
       return {
         type: "paragraph",
-        children: children.map(slateToMdast).filter((v) => !!v),
-      };
+        children: children.flatMap(slateToMdast).filter((v) => !!v),
+      } as Content;
     case "quote":
       return {
         type: "blockquote",
-        children: children.map(slateToMdast).filter((v) => !!v),
-      };
+        children: children.flatMap(slateToMdast).filter((v) => !!v),
+      } as Content;
     case "h1":
     case "h2":
     case "h3":
@@ -155,45 +166,65 @@ const slateToMdast = ({
       return {
         type: "heading",
         depth: parseInt(/^h(\d+)$/.exec(type)[1]) as 1 | 2 | 3 | 4 | 5 | 6,
-        children: children.map(slateToMdast).filter((v) => !!v),
-      };
+        children: children.flatMap(slateToMdast).filter((v) => !!v),
+      } as Content;
     case "ol":
     case "ul":
       return {
         type: "list",
         ordered: type === "ol",
-        children: children.map(slateToMdast).filter((v) => !!v),
-      };
+        children: children.flatMap(slateToMdast).filter((v) => !!v),
+      } as Content;
     case "li":
       return {
         type: "listItem",
-        children: children.map(slateToMdast).filter((v) => !!v),
-      };
+        children: [
+          {
+            type: "paragraph",
+            children: children.flatMap(slateToMdast).filter((v) => !!v),
+          },
+        ],
+      } as Content;
     case "a":
       return {
         type: "link",
         url,
         title,
-        children: children.map(slateToMdast).filter((v) => !!v),
-      };
+        children: children.flatMap(slateToMdast).filter((v) => !!v),
+      } as Content;
     case "img":
       return {
         type: "image",
         url,
         title,
         alt,
-      };
+      } as Content;
     case "code":
       return {
         type: "code",
         lang,
-        value: children.map(({ text }) => text).join(),
-      };
-    case undefined:
-      return {
-        type: code ? "inlineCode" : "text",
-        value: text,
-      };
+        value: children.flatMap(({ text }) => text).join(),
+      } as Content;
+    case undefined: {
+      return text
+        .split(/(^\s+|\s+$)/)
+        .filter(({ length }) => length)
+        .map<Content>((text) => {
+          const empty = /^(\s*)$/.test(text);
+          // TODO merge adjacent node with same styles (remove italic first)
+          // TODO dont merge here but in paragraphs ???
+          if (!empty && (bold || italic)) {
+            return {
+              type: bold ? "strong" : "emphasis",
+              children: slateToMdast({ code, text }),
+            };
+          }
+          return {
+            type: code ? "inlineCode" : "text",
+            value: text,
+          };
+        });
+    }
     default:
       console.log("Unhandled slate type", type);
       return null;

@@ -76,7 +76,10 @@ export const App = () => {
   }, [site?.repository]);
   if (!site) return null;
   return (
-    <Box sx={{ height: "100vh", width: "100vw", display: "flex" }}>
+    <Box
+      sx={{ height: "100vh", width: "100vw", display: "flex" }}
+      onDragOver={(event) => event.preventDefault()}
+    >
       <ThemeProvider theme={darkTheme}>
         <Drawer
           sx={{

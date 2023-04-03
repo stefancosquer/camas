@@ -69,6 +69,10 @@ export type Field = {
   name: string;
   description: string;
   hidden: boolean;
+  showOnly?: {
+    field: string;
+    value: string;
+  };
 } & (
   | {
       type: "text";

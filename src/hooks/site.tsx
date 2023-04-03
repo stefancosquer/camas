@@ -226,6 +226,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         .use(frontmatter, ["yaml"])
         .use(toMeta)
         .process(content);
+      console.log("LOADCONTENT", content);
       return { meta: data, body: result as Descendant[] };
     }
     return { meta: content as unknown as Record<string, unknown> };
@@ -242,10 +243,13 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         "---\n" +
         dump(meta, { noRefs: true }) +
         "\n---\n" +
-        toMarkdown({
-          type: "root",
-          children: fromSlate(body as unknown as any[]),
-        });
+        toMarkdown(
+          {
+            type: "root",
+            children: fromSlate(body as unknown as any[]),
+          },
+          { emphasis: "_" }
+        );
     } else if (isYaml(path)) {
       content = dump(meta, { noRefs: true });
     } else if (isJson(path)) {
@@ -258,6 +262,7 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         /%([0-9A-F]{2})/g,
         (match, p1) => String.fromCharCode(parseInt(p1, 16))
       );
+      console.log("SAVECONTENT", fromSlate(body as unknown as any[]), content);
       await saveContent(path, btoa(encoded), false);
     }
   };

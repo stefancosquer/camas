@@ -1,4 +1,12 @@
-import { FC, PropsWithChildren, useState } from "react";
+import * as React from "react";
+import {
+  DragEventHandler,
+  FC,
+  Key,
+  PropsWithChildren,
+  useEffect,
+  useState,
+} from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -19,80 +27,107 @@ import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 import { Field, Settings, Value } from "../model";
 import { Image } from "./image";
 import { useSite } from "../hooks/site";
-import * as React from "react";
 
 const Group = ({
   label,
   children,
-  draggable,
+  sortable,
+  dragged,
+  onDrag,
+  onDragOver,
+  onDragEnd,
   onRemove,
 }: PropsWithChildren<{
   label: string;
-  draggable?: boolean;
+  sortable?: boolean;
+  dragged?: boolean;
+  onDrag?: DragEventHandler;
+  onDragOver?: DragEventHandler;
+  onDragEnd?: DragEventHandler;
   onRemove?: () => void;
-}>) => (
-  <Accordion
-    variant="outlined"
-    TransitionProps={{ unmountOnExit: true }}
-    disableGutters
-    sx={{
-      borderRadius: 1,
-      borderColor: "grey.400",
-      bgcolor: "background.default",
-      width: "100%",
-      ":before": { display: "none" },
-    }}
-    draggable={draggable}
-    onDrag={() => console.log("dragging")}
-    onDragStart={() => console.log("start dragging")}
-    onDragEnd={() => console.log("stop dragging")}
-  >
-    <AccordionSummary
+}>) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Accordion
+      variant="outlined"
+      TransitionProps={{ unmountOnExit: true }}
+      disableGutters
       sx={{
-        minHeight: "38px",
-        height: "38px",
+        borderRadius: 1,
+        borderColor: dragged ? "background.paper" : "grey.400",
+        bgcolor: dragged ? "background.paper" : "background.default",
         width: "100%",
-        ".MuiAccordionSummary-content": {
-          display: "flex",
-          overflow: "hidden",
-          alignItems: "center",
-          width: "100%",
-        },
+        ":before": { display: "none" },
+        transition: "none",
       }}
-      expandIcon={<ExpandMoreIcon />}
+      draggable={sortable && !expanded}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+      }}
+      onDrag={onDrag}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      expanded={expanded}
+      onChange={(_, expanded) => setExpanded(expanded)}
     >
-      {draggable && (
-        <DragHandleOutlinedIcon
-          fontSize="small"
-          sx={{ mr: 2, ml: 0, color: "text.secondary" }}
-        />
-      )}
-      <Typography
+      <AccordionSummary
         sx={{
-          flex: 1,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
+          minHeight: "38px",
+          height: "38px",
+          width: "100%",
+          ".MuiAccordionSummary-content": {
+            display: "flex",
+            overflow: "hidden",
+            alignItems: "center",
+            width: "100%",
+          },
+          opacity: dragged ? 0 : 1,
         }}
+        expandIcon={<ExpandMoreIcon />}
       >
-        {label}
-      </Typography>
-      {onRemove && (
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRemove();
+        {sortable && (
+          <DragHandleOutlinedIcon
+            fontSize="small"
+            sx={{
+              mr: 2,
+              ml: 0,
+              color: "text.secondary",
+            }}
+          />
+        )}
+        <Typography
+          sx={{
+            flex: 1,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
-          <DeleteOutlineOutlined fontSize="small" />
-        </IconButton>
-      )}
-    </AccordionSummary>
-    <AccordionDetails>{children}</AccordionDetails>
-  </Accordion>
-);
+          {label}
+        </Typography>
+        {onRemove && (
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <DeleteOutlineOutlined fontSize="small" />
+          </IconButton>
+        )}
+      </AccordionSummary>
+      <AccordionDetails
+        sx={{
+          opacity: dragged ? 0 : 1,
+        }}
+      >
+        {children}
+      </AccordionDetails>
+    </Accordion>
+  );
+};
 
 const FIELDS: {
   [K in Field["type"]]?: FC<
@@ -234,46 +269,72 @@ const FIELDS: {
     config,
     value,
     onChange,
-  }) => (
-    <Group label={label}>
-      <Stack alignItems="flex-start" spacing={2}>
-        <Button
-          onClick={() => onChange([{}, ...value])}
-          size="small"
-          variant="outlined"
-        >
-          Add
-        </Button>
-        <Stack sx={{ width: "100%" }} spacing={2}>
-          {value?.map((item, index) => (
-            <Group
-              key={index}
-              label={
-                (item[config?.labelField] ??
-                  item["title"] ??
-                  item["label"] ??
-                  item["name"]) as string
-              }
-              draggable
-              onRemove={() => {
-                value.splice(index, 1);
-                onChange(value);
-              }}
-            >
-              <Fields
-                fields={fields}
-                value={item}
-                onChange={(itemValue) => {
-                  value[index] = itemValue;
+  }) => {
+    const [dragging, setDragging] = useState<Key>(null);
+    const [hovered, setHovered] = useState<Key>(null);
+    useEffect(() => {
+      if (dragging !== null && hovered !== null && dragging !== hovered) {
+        [value[hovered], value[dragging]] = [value[dragging], value[hovered]];
+        onChange(value);
+        setDragging(hovered);
+      }
+    }, [dragging, hovered]);
+    return (
+      <Group label={label}>
+        <Stack alignItems="flex-start" spacing={2}>
+          <Button
+            onClick={() => onChange([{}, ...value])}
+            size="small"
+            variant="outlined"
+          >
+            Add
+          </Button>
+          <Stack sx={{ width: "100%" }} spacing={2}>
+            {value?.map((item, index) => (
+              <Group
+                key={index}
+                dragged={index === dragging}
+                label={
+                  (item[config?.labelField] ??
+                    item["title"] ??
+                    item["label"] ??
+                    item["name"]) as string
+                }
+                onRemove={() => {
+                  value.splice(index, 1);
                   onChange(value);
                 }}
-              />
-            </Group>
-          ))}
+                onDrag={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (dragging === null) setDragging(index);
+                }}
+                onDragEnd={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDragging(null);
+                  setHovered(null);
+                }}
+                onDragOver={(event) => {
+                  setHovered(index);
+                }}
+                sortable
+              >
+                <Fields
+                  fields={fields}
+                  value={item}
+                  onChange={(itemValue) => {
+                    value[index] = itemValue;
+                    onChange(value);
+                  }}
+                />
+              </Group>
+            ))}
+          </Stack>
         </Stack>
-      </Stack>
-    </Group>
-  ),
+      </Group>
+    );
+  },
   list: ({ label, description, value, onChange }) => {
     const [newValue, setNewValue] = useState("");
     return (

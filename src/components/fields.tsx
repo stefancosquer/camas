@@ -392,6 +392,10 @@ export const Fields = ({
     <Stack sx={{ width: "100%", maxWidth: "640px" }} spacing={2}>
       {fields.map((field) => {
         const Component: FC<any> = FIELDS[field.type];
+        const visible =
+          !field.showOnly ||
+          value[field.showOnly.field] === field.showOnly.value;
+        if (!visible) return null;
         return Component ? (
           <Component
             key={field.name}

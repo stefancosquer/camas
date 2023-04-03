@@ -1,12 +1,5 @@
 import * as React from "react";
-import {
-  DragEventHandler,
-  FC,
-  Key,
-  PropsWithChildren,
-  useEffect,
-  useState,
-} from "react";
+import { FC, PropsWithChildren, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -27,23 +20,18 @@ import DeleteOutlineOutlined from "@mui/icons-material/DeleteOutlineOutlined";
 import { Field, Settings, Value } from "../model";
 import { Image } from "./image";
 import { useSite } from "../hooks/site";
+import { Sortable } from "./sortable";
 
 const Group = ({
   label,
   children,
   sortable,
   dragged,
-  onDrag,
-  onDragOver,
-  onDragEnd,
   onRemove,
 }: PropsWithChildren<{
   label: string;
   sortable?: boolean;
   dragged?: boolean;
-  onDrag?: DragEventHandler;
-  onDragOver?: DragEventHandler;
-  onDragEnd?: DragEventHandler;
   onRemove?: () => void;
 }>) => {
   const [expanded, setExpanded] = useState(false);
@@ -60,13 +48,6 @@ const Group = ({
         ":before": { display: "none" },
         transition: "none",
       }}
-      draggable={sortable && !expanded}
-      onDragStart={(event) => {
-        event.dataTransfer.effectAllowed = "move";
-      }}
-      onDrag={onDrag}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
       expanded={expanded}
       onChange={(_, expanded) => setExpanded(expanded)}
     >
@@ -270,15 +251,6 @@ const FIELDS: {
     value,
     onChange,
   }) => {
-    const [dragging, setDragging] = useState<Key>(null);
-    const [hovered, setHovered] = useState<Key>(null);
-    useEffect(() => {
-      if (dragging !== null && hovered !== null && dragging !== hovered) {
-        [value[hovered], value[dragging]] = [value[dragging], value[hovered]];
-        onChange(value);
-        setDragging(hovered);
-      }
-    }, [dragging, hovered]);
     return (
       <Group label={label}>
         <Stack alignItems="flex-start" spacing={2}>
@@ -289,48 +261,25 @@ const FIELDS: {
           >
             Add
           </Button>
-          <Stack sx={{ width: "100%" }} spacing={2}>
-            {value?.map((item, index) => (
+          <Sortable
+            values={value}
+            onChange={onChange}
+            Component={({ value, dragged, onChange, onRemove }) => (
               <Group
-                key={index}
-                dragged={index === dragging}
+                dragged={dragged}
+                onRemove={onRemove}
                 label={
-                  (item[config?.labelField] ??
-                    item["title"] ??
-                    item["label"] ??
-                    item["name"]) as string
+                  (value[config?.labelField] ??
+                    value["title"] ??
+                    value["label"] ??
+                    value["name"]) as string
                 }
-                onRemove={() => {
-                  value.splice(index, 1);
-                  onChange(value);
-                }}
-                onDrag={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if (dragging === null) setDragging(index);
-                }}
-                onDragEnd={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setDragging(null);
-                  setHovered(null);
-                }}
-                onDragOver={(event) => {
-                  setHovered(index);
-                }}
                 sortable
               >
-                <Fields
-                  fields={fields}
-                  value={item}
-                  onChange={(itemValue) => {
-                    value[index] = itemValue;
-                    onChange(value);
-                  }}
-                />
+                <Fields fields={fields} value={value} onChange={onChange} />
               </Group>
-            ))}
-          </Stack>
+            )}
+          ></Sortable>
         </Stack>
       </Group>
     );
@@ -360,49 +309,53 @@ const FIELDS: {
               Add
             </Button>
           </Stack>
-          {value?.map((v, index) => (
-            <Stack
-              key={index}
-              direction="row"
-              alignItems="center"
-              sx={{
-                px: 2,
-                py: 1,
-                borderColor: "grey.400",
-                borderStyle: "solid",
-                borderWidth: "1px",
-                borderRadius: 1,
-              }}
-              spacing={2}
-              draggable
-            >
-              <DragHandleOutlinedIcon
-                fontSize="small"
-                sx={{ color: "text.secondary", cursor: "pointer" }}
-              />
-              <Typography
+          <Sortable
+            values={value}
+            onChange={onChange}
+            Component={({ value, dragged, onRemove }) => (
+              <Stack
+                direction="row"
+                alignItems="center"
                 sx={{
-                  flex: 1,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  px: 2,
+                  py: 1,
+                  borderColor: dragged ? "background.paper" : "grey.400",
+                  bgcolor: dragged ? "background.paper" : "background.default",
+                  borderStyle: "solid",
+                  borderWidth: "1px",
+                  borderRadius: 1,
                 }}
+                spacing={2}
               >
-                {v}
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  value.splice(index, 1);
-                  onChange(value);
-                }}
-              >
-                <DeleteOutlineOutlined fontSize="small" />
-              </IconButton>
-            </Stack>
-          ))}
+                <DragHandleOutlinedIcon
+                  fontSize="small"
+                  sx={{
+                    color: "text.secondary",
+                    cursor: "pointer",
+                    opacity: dragged ? 0 : 1,
+                  }}
+                />
+                <Typography
+                  sx={{
+                    flex: 1,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    opacity: dragged ? 0 : 1,
+                  }}
+                >
+                  {value}
+                </Typography>
+                <IconButton
+                  sx={{ opacity: dragged ? 0 : 1 }}
+                  size="small"
+                  onClick={onRemove}
+                >
+                  <DeleteOutlineOutlined fontSize="small" />
+                </IconButton>
+              </Stack>
+            )}
+          />
         </Stack>
       </Group>
     );

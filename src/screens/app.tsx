@@ -64,7 +64,7 @@ const DrawerItem = ({
 };
 
 export const App = () => {
-  const { site, settings, setBranch } = useSite();
+  const { site, settings, setBranch, synchronize } = useSite();
   const { listBranches } = useBackend(site);
   const { slug } = useParams();
   const [branches, setBranches] = useState([]);
@@ -141,7 +141,7 @@ export const App = () => {
                 </MenuItem>
               ))}
             </TextField>
-            <IconButton size="small">
+            <IconButton onClick={synchronize} size="small">
               <SyncIcon sx={{ color: "text.primary" }} fontSize="small" />
             </IconButton>
           </Stack>

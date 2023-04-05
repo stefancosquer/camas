@@ -147,6 +147,7 @@ export const Image = ({
         position: "relative",
         border: 1,
         borderColor: "grey.300",
+        borderRadius: 1,
         bgcolor: "background.paper",
         width: "100%",
         pt: content ? "56.25%" : "100%",
@@ -164,7 +165,8 @@ export const Image = ({
             right: "-5px",
             height: "100%",
             zIndex: "-1",
-            opacity: 0.5,
+            opacity: 1,
+            borderRadius: 1,
           },
         }}
         shrink
@@ -179,6 +181,8 @@ export const Image = ({
           top: 0,
           right: 0,
           bottom: 0,
+          borderRadius: 1,
+          overflow: "hidden",
           img: {
             display: "block",
             width: "100%",
@@ -187,7 +191,7 @@ export const Image = ({
           },
         }}
       >
-        {src ? <img src={src} alt="" /> : path}
+        {src && <img src={src} alt="" />}
       </Box>
       <Stack
         direction="row"
@@ -227,6 +231,34 @@ export const Image = ({
           </IconButton>
         )}
       </Stack>
+      {!content && (
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: "8px",
+            left: "8px",
+            right: "8px",
+            px: 1,
+            py: 0.5,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            opacity: 0.9,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              textTransform: "none",
+              textAlign: "center",
+            }}
+          >
+            {path?.split("/").pop()}
+          </Typography>
+        </Box>
+      )}
     </FormControl>
   );
 };

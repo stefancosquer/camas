@@ -3,97 +3,14 @@ import { useSite } from "../hooks/site";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Directory, Field, Template } from "../model";
-import { isImage } from "../utils";
+import { Directory, Template } from "../model";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Wysiwyg } from "../components/wysiwyg";
 import { Descendant } from "slate";
 import { Fields } from "../components/fields";
 import { LoadingButton } from "@mui/lab";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-
-const generateTemplate = (data: object): Field[] =>
-  Object.entries(data).map(([label, v]): Field => {
-    if (Array.isArray(v)) {
-      if (v.length > 0) {
-        // TODO depends of item type
-        console.log(typeof v[0]);
-      }
-      return {
-        label,
-        name: label,
-        description: "",
-        hidden: false,
-        type: "field_group_list",
-        fields: generateTemplate(v.reduce((a, v) => ({ ...a, ...v }), {})),
-        config: {},
-      };
-    } else if (typeof v === "object") {
-      return {
-        label,
-        name: label,
-        description: "",
-        hidden: false,
-        type: "field_group",
-        fields: generateTemplate(v),
-      };
-    } else if (typeof v === "boolean") {
-      return {
-        label,
-        name: label,
-        description: "",
-        default: false,
-        hidden: false,
-        type: "boolean",
-      };
-    } else if (typeof v === "number") {
-      return {
-        label,
-        name: label,
-        description: "",
-        hidden: false,
-        type: "number",
-        default: 0,
-        config: {
-          required: false,
-        },
-      };
-    } else if (typeof v === "string") {
-      if (isImage(v)) {
-        return {
-          label,
-          name: label,
-          description: "",
-          hidden: false,
-          type: "file",
-          default: "",
-          config: {},
-        };
-      } else if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-        return {
-          label,
-          name: label,
-          description: "",
-          hidden: false,
-          type: "color",
-          default: "",
-          config: { required: false, color_format: "RGB" },
-        };
-      } else {
-        return {
-          label,
-          name: label,
-          description: "",
-          hidden: false,
-          type: "text",
-          default: "",
-          config: {
-            required: false,
-          },
-        };
-      }
-    }
-  });
+import { generateTemplate } from "../utils";
 
 export const Document = () => {
   const { "*": path } = useParams();

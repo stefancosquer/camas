@@ -2,6 +2,7 @@ import { visit } from "unist-util-visit";
 import { load } from "js-yaml";
 import { Plugin } from "unified";
 import { Content } from "mdast-util-to-markdown/lib/types";
+import { Field } from "./model";
 
 export const request = async (
   url: string,
@@ -29,20 +30,24 @@ export const slugify = (str) =>
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export const isMarkdown = (path: string) => path && path.endsWith(".md");
+export const isMarkdown = (path: string) =>
+  path && path.toLowerCase().endsWith(".md");
 
 export const isYaml = (path: string) =>
-  path && (path.endsWith(".yml") || path.endsWith(".yaml"));
+  path &&
+  (path.toLowerCase().endsWith(".yml") || path.toLowerCase().endsWith(".yaml"));
 
-export const isJson = (path: string) => path && path.endsWith(".json");
+export const isJson = (path: string) =>
+  path && path.toLowerCase().endsWith(".json");
 
 export const isImage = (path: string) =>
   path &&
-  (path.endsWith(".png") ||
-    path.endsWith(".jpg") ||
-    path.endsWith(".jpeg") ||
-    path.endsWith(".webp") ||
-    path.endsWith(".gif"));
+  (path.toLowerCase().endsWith(".png") ||
+    path.toLowerCase().endsWith(".jpg") ||
+    path.toLowerCase().endsWith(".jpeg") ||
+    path.toLowerCase().endsWith(".webp") ||
+    path.toLowerCase().endsWith(".gif") ||
+    path.toLowerCase().endsWith(".svg"));
 
 export const toMeta = () => (tree, file) => {
   visit(tree, "yaml", (node): void => {
@@ -239,3 +244,86 @@ export const toSlate: Plugin<[]> = function () {
   this.Compiler = (node: { children }) =>
     node.children.map(mdastToSlate).filter((v) => !!v);
 };
+
+export const generateTemplate = (data: object): Field[] =>
+  Object.entries(data).map(([label, v]): Field => {
+    if (Array.isArray(v)) {
+      if (v.length > 0) {
+        // TODO depends of item type
+        console.log(typeof v[0]);
+      }
+      return {
+        label,
+        name: label,
+        description: "",
+        hidden: false,
+        type: "field_group_list",
+        fields: generateTemplate(v.reduce((a, v) => ({ ...a, ...v }), {})),
+        config: {},
+      };
+    } else if (typeof v === "object") {
+      return {
+        label,
+        name: label,
+        description: "",
+        hidden: false,
+        type: "field_group",
+        fields: generateTemplate(v),
+      };
+    } else if (typeof v === "boolean") {
+      return {
+        label,
+        name: label,
+        description: "",
+        default: false,
+        hidden: false,
+        type: "boolean",
+      };
+    } else if (typeof v === "number") {
+      return {
+        label,
+        name: label,
+        description: "",
+        hidden: false,
+        type: "number",
+        default: 0,
+        config: {
+          required: false,
+        },
+      };
+    } else if (typeof v === "string") {
+      if (isImage(v)) {
+        return {
+          label,
+          name: label,
+          description: "",
+          hidden: false,
+          type: "file",
+          default: "",
+          config: {},
+        };
+      } else if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        return {
+          label,
+          name: label,
+          description: "",
+          hidden: false,
+          type: "color",
+          default: "",
+          config: { required: false, color_format: "RGB" },
+        };
+      } else {
+        return {
+          label,
+          name: label,
+          description: "",
+          hidden: false,
+          type: "text",
+          default: "",
+          config: {
+            required: false,
+          },
+        };
+      }
+    }
+  });

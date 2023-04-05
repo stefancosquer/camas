@@ -31,6 +31,7 @@ const MAX_EDGE = 1200;
 const SiteContext = createContext<{
   site?: Site;
   settings?: Settings;
+  synchronize: () => Promise<void>;
   listFiles: (path: string) => Promise<Leaf[]>;
   listMedia: () => Promise<Leaf[]>;
   loadMedia: (path: string) => Promise<string>;
@@ -42,6 +43,7 @@ const SiteContext = createContext<{
     meta: Record<string, unknown>,
     body?: Descendant[]
   ) => Promise<void>;
+  saveMedia: (file: File) => Promise<void>;
   sites: Site[];
   addSite: (site: Site) => void;
   removeSite: (index: number) => void;
@@ -51,11 +53,13 @@ const SiteContext = createContext<{
   setBranch: (branch: string) => void;
 }>({
   sites: [],
+  synchronize: () => void 0,
   listFiles: () => void 0,
   listMedia: () => void 0,
   loadMedia: () => void 0,
   loadDocument: () => void 0,
   saveDocument: () => void 0,
+  saveMedia: () => void 0,
   addSite: () => void 0,
   removeSite: () => void 0,
   setSite: () => void 0,
@@ -94,32 +98,33 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     localStorage.setItem("sites", JSON.stringify(sites));
   }, [sites]);
-  useEffect(() => {
+  const synchronize = async () => {
+    setTree(undefined);
     if (site) {
-      (async () => {
-        setTree(undefined);
-        const leafs = await loadTree();
-        const tree: Tree = {};
-        for (const leaf of leafs) {
-          if (!leaf.folder) {
-            const parts = leaf.path.replace(/^\/|\/$/g, "").split("/");
-            let current: Tree = tree;
-            for (let i = 0; i < parts.length; i++) {
-              const part = parts[i];
-              if (!current[part]) {
-                if (i === parts.length - 1) {
-                  current[part] = leaf;
-                } else {
-                  current[part] = {};
-                }
+      const leafs = await loadTree();
+      const tree: Tree = {};
+      for (const leaf of leafs) {
+        if (!leaf.folder) {
+          const parts = leaf.path.replace(/^\/|\/$/g, "").split("/");
+          let current: Tree = tree;
+          for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!current[part]) {
+              if (i === parts.length - 1) {
+                current[part] = leaf;
+              } else {
+                current[part] = {};
               }
-              current = current[part] as Tree;
             }
+            current = current[part] as Tree;
           }
         }
-        setTree(tree);
-      })();
+      }
+      setTree(tree);
     }
+  };
+  useEffect(() => {
+    synchronize().then();
   }, [site]);
   useEffect(() => {
     (async () => {
@@ -165,41 +170,49 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
         return await new Promise(async (resolve) => {
           const reader = new FileReader();
           reader.addEventListener("load", () => {
-            const image = new Image();
-            image.onload = async () => {
-              const { width, height } =
-                image.width > image.height
-                  ? {
-                      width: Math.min(image.width, MAX_EDGE),
-                      height:
-                        (Math.min(image.width, MAX_EDGE) / image.width) *
-                        image.height,
-                    }
-                  : {
-                      width:
-                        (Math.min(image.height, MAX_EDGE) / image.height) *
-                        image.width,
-                      height: Math.min(image.height, MAX_EDGE),
-                    };
-              const canvas = document.createElement("canvas");
-              canvas.width = width;
-              canvas.height = height;
-              const context = canvas.getContext("2d");
-              context.imageSmoothingQuality = "high";
-              context.drawImage(
-                image,
-                0,
-                0,
-                image.width,
-                image.height,
-                0,
-                0,
-                width,
-                height
+            if (path.endsWith(".svg")) {
+              resolve(
+                reader.result
+                  .toString()
+                  .replace("text/plain", "image/svg+xml") as T
               );
-              resolve(canvas.toDataURL("image/webp") as T);
-            };
-            image.src = reader.result.toString();
+            } else {
+              const image = new Image();
+              image.onload = async () => {
+                const { width, height } =
+                  image.width > image.height
+                    ? {
+                        width: Math.min(image.width, MAX_EDGE),
+                        height:
+                          (Math.min(image.width, MAX_EDGE) / image.width) *
+                          image.height,
+                      }
+                    : {
+                        width:
+                          (Math.min(image.height, MAX_EDGE) / image.height) *
+                          image.width,
+                        height: Math.min(image.height, MAX_EDGE),
+                      };
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const context = canvas.getContext("2d");
+                context.imageSmoothingQuality = "high";
+                context.drawImage(
+                  image,
+                  0,
+                  0,
+                  image.width,
+                  image.height,
+                  0,
+                  0,
+                  width,
+                  height
+                );
+                resolve(canvas.toDataURL("image/webp") as T);
+              };
+              image.src = reader.result.toString();
+            }
           });
           reader.readAsDataURL(await content.blob());
         });
@@ -266,6 +279,20 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
       await saveContent(path, btoa(encoded), false);
     }
   };
+  const saveMedia = async (file: File) => {
+    const path = `${settings.upload_dir}/${file.name}`;
+    const encoded = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.toString().split(",").pop());
+      reader.onerror = (error) => reject(error);
+    });
+    const create = !path
+      .replace(/^\/|\/$/g, "")
+      .split("/")
+      .reduce((a, v) => (a ? a[v] : undefined), tree);
+    await saveContent(path, encoded, create);
+  };
   const setBranch = (branch: string) => {
     setSite({ ...site, branch });
   };
@@ -274,11 +301,13 @@ export const SiteContextProvider = ({ children }: PropsWithChildren) => {
       value={{
         site,
         settings,
+        synchronize,
         listFiles,
         listMedia,
         loadMedia,
         loadDocument,
         saveDocument,
+        saveMedia,
         sites,
         setSite,
         addSite,
